@@ -3,7 +3,8 @@ from PySide6.QtGui import QFont, QAction
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QFrame,
     QPushButton, QLabel, QComboBox,
-    QGridLayout, QMenuBar, QMenu, QStatusBar
+    QGridLayout, QMenuBar, QMenu, QStatusBar,
+    QHBoxLayout, QVBoxLayout
 )
 
 class Ui_interface(object):
@@ -12,132 +13,180 @@ class Ui_interface(object):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1500,780)
 
-
-
-
+        #central widget
         self.centralwidget = QWidget(MainWindow)
 
+        #Main Layout
+        self.main_layout = QHBoxLayout(self.centralwidget)
+        #Left layout
+        self.left_layout = QVBoxLayout()
+        #right Layout
+        self.right_layout = QVBoxLayout()
+       
+        #Adds left and right layout to the mainlayout
+        self.main_layout.addLayout(self.left_layout,3)
+        self.main_layout.addLayout(self.right_layout,1)
+
+        #left content
+
+
         # IMAGE FRAME
-        self.Image_frame = QFrame(self.centralwidget)
-        self.Image_frame.setGeometry(QRect(10, 10, 751, 441))
+        self.Image_frame = QFrame()
         self.Image_frame.setFrameShape(QFrame.StyledPanel)
+        self.Image_frame.setMinimumHeight(500)
+
+        #button row
+        self.button_layout = QHBoxLayout()
 
         # UPLOAD BUTTON
-        self.pushButton_2 = QPushButton(self.centralwidget)
-        self.pushButton_2.setGeometry(QRect(10, 470, 121, 28))
-        self.pushButton_2.setText("Upload Image")
-
-        # EYEDROPPER Button
-        self.pushButton_3 = QPushButton(self.centralwidget)
-        self.pushButton_3.setGeometry(QRect(600, 470, 131, 28))
-        self.pushButton_3.setText("EyeDropper : Off")
+        self.upload_btn = QPushButton("Upload Image")
+        self.eyedropper_btn = QPushButton("EyeDropper : Off")
+        
+        self.button_layout.addWidget(self.upload_btn)
+        self.button_layout.addStretch()
+        self.button_layout.addWidget(self.eyedropper_btn)
+        
 
         # Selected color section
-        self.Selected_color_frame_2 = QFrame(self.centralwidget)
-        self.Selected_color_frame_2.setGeometry(QRect(10, 550, 751, 211))
+        #*Outer Container for the selected color frame
+        self.Selected_color_frame_2 = QFrame()
         self.Selected_color_frame_2.setFrameShape(QFrame.StyledPanel)
 
+        self.Selected_color_frame_2_layout = QVBoxLayout(self.Selected_color_frame_2)
         #Properties for selected color text
-        self.label_2 = QLabel(self.Selected_color_frame_2)
-        self.label_2.setGeometry(QRect(260, 10, 271, 41))
-        font = QFont()
-        font.setPointSize(18)
-        self.label_2.setFont(font)
-        self.label_2.setText("Selected Color")
-        self.label_2.setAlignment(Qt.AlignHCenter)
+        self.title = QLabel("Selected Color")
+        title_font = QFont()
+        title_font.setPointSize(18)
+        self.title.setFont(title_font)
+        self.title.setAlignment(Qt.AlignCenter)
         #Frame responsible for displaying selcted color
-        self.Selected_color_frame = QFrame(self.Selected_color_frame_2)
-        self.Selected_color_frame.setGeometry(QRect(320, 50, 141, 91))
+
+        self.Selected_color_frame = QFrame()
         self.Selected_color_frame.setFrameShape(QFrame.StyledPanel)
-        #text label to display color's HEX value
-        self.label_3 = QLabel(self.Selected_color_frame_2)
-        self.label_3.setGeometry(QRect(370, 150, 41, 21))
-        font = QFont()
-        font.setPointSize(11)
-        self.label_3.setFont(font)
-        self.label_3.setText("HEX")
+        self.Selected_color_frame.setFixedSize(120,80)
+
+        self.hex_label = QLabel("HEX")
+
+        self.Selected_color_frame_2_layout.addWidget(self.title)
+        self.Selected_color_frame_2_layout.addWidget(self.Selected_color_frame, alignment=Qt.AlignCenter)
+        self.Selected_color_frame_2_layout.addWidget(self.hex_label, alignment=Qt.AlignCenter)
+        #adding the widgets to the leftside layout
+        self.left_layout.addWidget(self.Image_frame, 3)
+        self.left_layout.addLayout(self.button_layout, 0)
+        self.left_layout.addWidget(self.Selected_color_frame_2)
+        
+
+        #Right side content
 
         # Preset Frame
-        self.Preset_frame = QFrame(self.centralwidget)
-        self.Preset_frame.setGeometry(QRect(780, 10, 311, 211))
+        self.Preset_frame = QFrame()
         self.Preset_frame.setFrameShape(QFrame.StyledPanel)
-        #preset ComboBox
-        self.Preset_combobox = QComboBox(self.Preset_frame)
-        self.Preset_combobox.setGeometry(QRect(0, 0, 311, 31))
 
-        font = QFont()
-        font.setPointSize(14)
-        self.Preset_combobox.setFont(font)
+        self.Preset_layout = QVBoxLayout(self.Preset_frame)
+        self.Preset_frame.setMaximumHeight(50)
+        #preset ComboBox
+        self.Preset_combobox = QComboBox()
+        self.Preset_combobox.setFont(QFont("",14))
 
         self.Preset_combobox.addItems([
             "Natural", "Warm", "Cool", "Moody",
             "Neon", "Patel", "Anime Cel"
         ])
 
-        # Palette Generation frame
-        self.Palette_frame = QFrame(self.centralwidget)
-        self.Palette_frame.setGeometry(QRect(780, 240, 311, 521))
-        self.Palette_frame.setFrameShape(QFrame.StyledPanel)
+        self.Preset_layout.addWidget(self.Preset_combobox)
 
-        self.label_4 = QLabel(self.Palette_frame)
-        self.label_4.setGeometry(QRect(10, 10, 311, 31))
-        font = QFont()
-        font.setPointSize(16)
-        font.setUnderline(True)
-        self.label_4.setFont(font)
-        self.label_4.setText("     Generated Palette     ")
+        # Palette Generation frame
+        self.Palette_frame = QFrame()
+        self.Palette_frame.setFrameShape(QFrame.StyledPanel)
+        # self.Palette_frame.setFixedHeight(600)
+
+        self.Palette_layout = QVBoxLayout(self.Palette_frame)
+
+        self.palette_title = QLabel("Generated Palette")
+        self.palette_title.setAlignment(Qt.AlignCenter)
+        self.palette_title.setFont(QFont("", 20))
+
+        self.Palette_layout.addWidget(self.palette_title)
+        self.Palette_layout.setAlignment(Qt.AlignTop)
 
         # GRID LAYOUT HOLDER
-        self.gridLayoutWidget = QWidget(self.Palette_frame)
-        self.gridLayoutWidget.setGeometry(QRect(19, 50, 271, 441))
+        self.grid = QGridLayout()
+        frame_names = ["Lineart","Accent","Highlight 1","Highlight 2","Shadow 1","Shadow 2"]
 
-        self.gridLayout = QGridLayout(self.gridLayoutWidget)
+        self.palette_boxes = []
+        self.palette_labels = []
 
-        # PALETTE INTERNAL FRAME
-        self.Palette_frame_2 = QFrame(self.gridLayoutWidget)
-        self.Palette_frame_2.setFrameShape(QFrame.StyledPanel)
+        self.export_button = QPushButton("Export Palette")
+        self.export_button.setFixedHeight(35)
 
-        self.gridLayout.addWidget(self.Palette_frame_2)
+        self.pop_out_button = QPushButton("Pop Out")
+        self.pop_out_button.setFixedHeight(35)
 
-        # COLOR FRAMES
-        #lineart frame
-        self.Lineart_frame = QFrame(self.Palette_frame_2)
-        self.Lineart_frame.setGeometry(QRect(20, 30, 111, 71))
-        self.Lineart_frame.setFrameShape(QFrame.StyledPanel)
-        #highlight 1 frame
-        self.Highlight1_frame = QFrame(self.Palette_frame_2)
-        self.Highlight1_frame.setGeometry(QRect(20, 160, 111, 71))
-        self.Highlight1_frame.setFrameShape(QFrame.StyledPanel)
-        #highlight 2 frame
-        self.Shadow1_frame = QFrame(self.Palette_frame_2)
-        self.Shadow1_frame.setGeometry(QRect(20, 310, 111, 71))
-        self.Shadow1_frame.setFrameShape(QFrame.StyledPanel)
-        #Accent frame
-        self.Accent_frame = QFrame(self.Palette_frame_2)
-        self.Accent_frame.setGeometry(QRect(140, 30, 111, 71))
-        self.Accent_frame.setFrameShape(QFrame.StyledPanel)
-        #Highlight 2 Frame
-        self.Highlight2_frame = QFrame(self.Palette_frame_2)
-        self.Highlight2_frame.setGeometry(QRect(140, 160, 111, 71))
-        self.Highlight2_frame.setFrameShape(QFrame.StyledPanel)
-        #shadow2 Frame
-        self.Shadow2_frame = QFrame(self.Palette_frame_2)
-        self.Shadow2_frame.setGeometry(QRect(140, 310, 111, 71))
-        self.Shadow2_frame.setFrameShape(QFrame.StyledPanel)
+        button_row = QHBoxLayout()
+        button_row.addWidget(self.pop_out_button)
+        button_row.addStretch()
+        button_row.addWidget(self.export_button)
+        
+        
 
-        # Palette Buttons
-        self.CopyButton = QPushButton(self.centralwidget)
-        self.CopyButton.setGeometry(QRect(780, 770, 93, 28))
 
-        self.PopOutButton = QPushButton(self.centralwidget)
-        self.PopOutButton.setGeometry(QRect(1010, 770, 93, 28))
-        #branding information 
-        self.label = QLabel(self.centralwidget)
-        self.label.setGeometry(QRect(300, 770, 291, 21))
-        font = QFont()
-        font.setPointSize(12)
-        self.label.setFont(font)
-        self.label.setText("5-Headed Monster 2026")
+
+        #loop responsible for Creating the indivodual frames 
+        for i, name in enumerate(frame_names):
+
+            container = QVBoxLayout()
+            container.setSpacing(10)
+            
+
+            title= QLabel(name)
+            title.setAlignment(Qt.AlignCenter)
+            font= QFont()
+            font.setPointSize(15)
+            title.setFont(font)
+
+             # Color box
+            box = QFrame()
+            box.setFixedSize(130, 80)
+            box.setFrameShape(QFrame.StyledPanel)
+
+            # HEX label
+            hex_label = QLabel("HEX:")
+            hex_label.setAlignment(Qt.AlignCenter)
+            hex_label.setFont(font)
+
+            # Add to vertical container
+            container.addWidget(title)
+            container.addWidget(box)
+            container.addWidget(hex_label)
+
+            # Position in grid
+            row = i // 2
+            col = i % 2
+
+            self.grid.addLayout(container, row, col)
+
+            # Store references (VERY IMPORTANT)
+            self.palette_boxes.append(box)
+            self.palette_labels.append(hex_label)
+            #applies spacing for each frame
+            self.grid.setHorizontalSpacing(150)
+            self.grid.setVerticalSpacing(50)
+            
+
+        # self.Palette_layout = QVBoxLayout(self.Palette_frame)
+        self.Palette_layout.addLayout(self.grid)
+        self.Palette_layout.addLayout(button_row)
+        self.Palette_layout.addStretch()
+
+       # ADD elements to the right side
+
+        self.right_layout.addWidget(self.Preset_frame,0)
+        self.right_layout.addWidget(self.Palette_frame,1)
+        
+        
+        # self.PopOutButton = QPushButton(self.centralwidget)
+        
+        
 
         MainWindow.setCentralWidget(self.centralwidget)
 

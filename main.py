@@ -73,7 +73,7 @@ class MainWindow(QMainWindow):
         self.image_label.setGeometry(self.ui.Image_frame.rect())
 
         # Connect upload button
-        self.ui.pushButton_2.clicked.connect(self.open_file_dialog)
+        self.ui.upload_btn.clicked.connect(self.open_file_dialog)
 
     # Function used to open file explorer to upload an image
     def open_file_dialog(self):
