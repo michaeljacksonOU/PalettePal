@@ -2,8 +2,9 @@ import sys
 import colour
 from colour.models import sRGB_to_XYZ, XYZ_to_Oklab
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel
+from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout
 from PySide6.QtGui import QPixmap, QImage
+from PySide6.QtCore import Qt
 
 from frontend import Ui_interface
 
@@ -15,18 +16,52 @@ class ImageLabel(QLabel):
 
     def set_image(self, path):
         self.image = QImage(path)
-        self.setPixmap(QPixmap(path))
 
-    def mousePressEvent(self, event): #Mouse press event to handle storing color values and Color conversion 
+        # Limit resolution (Paul task #2)
+        max_width = 1920
+        max_height = 1080
 
-        if self.image: #checks if the mouse click is inside the selected image 
+        if self.image.width() > max_width or self.image.height() > max_height:
+            self.image = self.image.scaled(
+                max_width,
+                max_height,
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation
+            )
 
-            x = int(event.position().x()) #finds the X and Y coordinate of the image 
+        pixmap = QPixmap.fromImage(self.image)
+
+        # Scale to fit label while keeping aspect ratio
+        scaled_pixmap = pixmap.scaled(
+            self.size(),
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation
+        )
+
+        self.setPixmap(scaled_pixmap)
+        self.setAlignment(Qt.AlignCenter)  # Center image (Paul task #1)
+
+    def resizeEvent(self, event):
+        if self.image:
+            pixmap = QPixmap.fromImage(self.image)
+            scaled_pixmap = pixmap.scaled(
+                self.size(),
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation
+            )
+            self.setPixmap(scaled_pixmap)
+        super().resizeEvent(event)
+
+    def mousePressEvent(self, event):  # Mouse press event to handle storing color values and Color conversion
+
+        if self.image:  # checks if the mouse click is inside the selected image
+
+            x = int(event.position().x())  # finds the X and Y coordinate of the image
             y = int(event.position().y())
 
-            color = self.image.pixelColor(x, y) #uses the coordinates to find the color 
+            color = self.image.pixelColor(x, y)  # uses the coordinates to find the color
 
-            r = color.red() #Gathers RBG values to make up a color
+            r = color.red()  # Gathers RBG values to make up a color
             g = color.green()
             b = color.blue()
 
@@ -36,21 +71,20 @@ class ImageLabel(QLabel):
             # HEX value
             hex_value = color.name()
 
-            #  Convert sRGB → XYZ → Oklab
+            # Convert sRGB → XYZ → Oklab
             xyz = sRGB_to_XYZ(srgb)
             oklab = XYZ_to_Oklab(xyz)
 
             L, a, b_val = oklab
 
-            print("HEX:", hex_value) #prints Hex Color
-            print("RGB:", r, g, b) #Prints RBG values
-            print("OKLAB:", L, a, b_val) #prints OKLAB converted values 
+            print("HEX:", hex_value)  # prints Hex Color
+            print("RGB:", r, g, b)  # Prints RBG values
+            print("OKLAB:", L, a, b_val)  # prints OKLAB converted values
 
             # Save in parent window
             self.parent().selected_hex = hex_value
             self.parent().selected_rgb = (r, g, b)
             self.parent().selected_oklab = (L, a, b_val)
-
 
 
 class MainWindow(QMainWindow):
@@ -69,8 +103,10 @@ class MainWindow(QMainWindow):
         # Create image label inside the frame
         self.image_label = ImageLabel(self.ui.Image_frame)
 
-        # Make the image fill the frame
-        self.image_label.setGeometry(self.ui.Image_frame.rect())
+        # Put the image label inside the frame layout
+        layout = QVBoxLayout(self.ui.Image_frame)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.image_label)
 
         # Connect upload button
         self.ui.upload_btn.clicked.connect(self.open_file_dialog)
