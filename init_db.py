@@ -1,0 +1,13 @@
+import sqlite3
+conn = sqlite3.connect('palettepal.db')
+c = conn.cursor()
+c.execute("CREATE TABLE IF NOT EXISTS ProjectSession (session_id INTEGER PRIMARY KEY AUTOINCREMENT, image_path TEXT NOT NULL, created_at DATETIME, last_used_preset TEXT)")
+c.execute("CREATE TABLE IF NOT EXISTS PaletteResult (result_id INTEGER PRIMARY KEY AUTOINCREMENT, session_id INTEGER, base_color_hex TEXT, preset_environment TEXT, preset_style TEXT, lineart_hex TEXT, shadow1_hex TEXT, shadow2_hex TEXT, highlight1_hex TEXT, highlight2_hex TEXT, accent_hex TEXT, generated_at DATETIME)")
+c.execute("CREATE TABLE IF NOT EXISTS PresetDefinition (preset_name TEXT PRIMARY KEY, light_temp TEXT, shadow_temp TEXT, temp_strength REAL, hsv_delta_values TEXT)")
+c.execute("CREATE TABLE IF NOT EXISTS CalibrationSwatch (label TEXT, hex TEXT PRIMARY KEY, category TEXT)")
+c.execute("CREATE TABLE IF NOT EXISTS UserAccount (user_id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, email TEXT UNIQUE, password_hash TEXT, created_at DATETIME, last_login DATETIME)")
+c.execute("CREATE TABLE IF NOT EXISTS Challenge (challenge_id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, description TEXT, type TEXT, created_at DATETIME, due_at DATETIME)")
+c.execute("CREATE TABLE IF NOT EXISTS ChallengeSubmission (submission_id INTEGER PRIMARY KEY AUTOINCREMENT, challenge_id INTEGER, user_id INTEGER, palette_result_id INTEGER, image_path TEXT, submitted_at DATETIME, sync_status TEXT DEFAULT 'pending')")
+conn.commit()
+conn.close()
+print("Done!")
