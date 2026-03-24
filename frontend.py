@@ -40,7 +40,7 @@ class Ui_interface(object):
 
         # UPLOAD BUTTON
         self.upload_btn = QPushButton("Upload Image")
-        self.eyedropper_btn = QPushButton("EyeDropper : Off")
+        self.eyedropper_btn = QPushButton("EyeDropper : On")
         
         self.button_layout.addWidget(self.upload_btn)
         self.button_layout.addStretch()
@@ -90,7 +90,7 @@ class Ui_interface(object):
 
         self.Preset_combobox.addItems([
             "Natural", "Warm", "Cool", "Moody",
-            "Neon", "Patel", "Anime Cel"
+            "Neon", "Pastel", "Anime Cel"
         ])
 
         self.Preset_layout.addWidget(self.Preset_combobox)
@@ -116,7 +116,7 @@ class Ui_interface(object):
         self.palette_boxes = []
         self.palette_labels = []
 
-        self.export_button = QPushButton("Export Palette")
+        self.export_button = QPushButton("Copy Palette")
         self.export_button.setFixedHeight(35)
 
         self.pop_out_button = QPushButton("Pop Out")
@@ -203,12 +203,12 @@ class Ui_interface(object):
         self.actionPlaceholder_1 = QAction("Placeholder 1", MainWindow)
         self.actionPlaceholder_2 = QAction("Placeholder 2", MainWindow)
         #setting button options
-        self.actionPlaceholder_3 = QAction("Placeholder 1", MainWindow)
+        self.action_toggle_theme = QAction("Toggle Light/Dark Mode", MainWindow)
         self.actionPlaceholder_4 = QAction("Placeholder 2", MainWindow)
 
         self.menufile.addAction(self.actionPlaceholder_1)
         self.menufile.addAction(self.actionPlaceholder_2)
-        self.menuSettings.addAction(self.actionPlaceholder_3)
+        self.menuSettings.addAction(self.action_toggle_theme)
         self.menuSettings.addAction(self.actionPlaceholder_4)
 
         self.menubar.addMenu(self.menuPalettePal)
