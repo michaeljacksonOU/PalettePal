@@ -2,118 +2,166 @@ import sys
 import colour
 from colour.models import sRGB_to_XYZ, XYZ_to_Oklab
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout, QMessageBox
-from PySide6.QtGui import QPixmap, QImage
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout, QMessageBox, QWidget
+from PySide6.QtGui import QPixmap, QImage, QPainter, QCursor
+from PySide6.QtCore import Qt, QPoint, QPointF
 
 from frontend import Ui_interface
 
-class ImageLabel(QLabel):
+
+class ZoomableImageLabel(QWidget):
+    #Widget resonsible that displays an image with zoom and pan support
+    ZOOM_STEP = 1.15 #Zoom increment percentage 
+    ZOOM_MIN  = 0.05
+    ZOOM_MAX  = 20.0 #max zoom level
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.image = None
+        self.image       = None #holds the loaded QImage 
+        self._zoom       = 1.0 # current zoom level
+        self._fit_zoom   = 1.0  # Stores default zoom level to restrict zoom out
+        self._offset     = QPointF(0, 0) #the top-level corner position of the image inside the widget 
+        self._drag_start = None # stores mouse position when a pan begins 
+        self._drag_orig  = None #stores the image offset when a drag begins
+        self.setMouseTracking(True)
 
     def set_image(self, path):
         self.image = QImage(path)
 
         # Limit resolution (Paul task #2)
-        max_width = 1920
-        max_height = 1080
-
-        if self.image.width() > max_width or self.image.height() > max_height:
+        max_w, max_h = 1920, 1080
+        if self.image.width() > max_w or self.image.height() > max_h:
             self.image = self.image.scaled(
-                max_width,
-                max_height,
+                max_w, max_h,
                 Qt.KeepAspectRatio,
                 Qt.SmoothTransformation
             )
 
-        pixmap = QPixmap.fromImage(self.image)
+        self._fit_to_window()
+        self.update()
 
-        # Scale to fit label while keeping aspect ratio
-        scaled_pixmap = pixmap.scaled(
-            self.size(),
-            Qt.KeepAspectRatio,
-            Qt.SmoothTransformation
+    def _fit_to_window(self):
+        if not self.image:
+            return
+        iw, ih = self.image.width(), self.image.height()
+        ww, wh = self.width() or 1, self.height() or 1
+        self._zoom = min(ww / iw, wh / ih)
+        self._fit_zoom = self._zoom  # Save the default zoom level to use as zoom out limit
+        self._center_image()
+
+    def _center_image(self):
+        if not self.image:
+            return
+        iw = self.image.width() * self._zoom
+        ih = self.image.height() * self._zoom
+        self._offset = QPointF(
+            (self.width()  - iw) / 2,
+            (self.height() - ih) / 2,
         )
 
-        self.setPixmap(scaled_pixmap)
-        self.setAlignment(Qt.AlignCenter)  # Center image (Paul task #1)
-
     def resizeEvent(self, event):
-        if self.image:
-            pixmap = QPixmap.fromImage(self.image)
-            scaled_pixmap = pixmap.scaled(
-                self.size(),
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
-            self.setPixmap(scaled_pixmap)
+        self._fit_to_window()
         super().resizeEvent(event)
+    #Draws the image at the current zoom level and offset position 
 
-    def mousePressEvent(self, event):  # Mouse press event to handle storing color values and Color conversion
+    def paintEvent(self, event):
+        if not self.image:
+            return
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.SmoothPixmapTransform)
+        painter.translate(self._offset)
+        painter.scale(self._zoom, self._zoom)
+        painter.drawImage(0, 0, self.image)
 
-        if not self.window().eyedropper_enabled:
+    def wheelEvent(self, event):
+        if not self.image:
             return
 
-        if self.image:
-            pixmap = self.pixmap()
-            if not pixmap:
-                return
+        # Zoom centred on the cursor position
+        cursor_pos = QPointF(event.position())
+        delta = event.angleDelta().y()
+        factor = self.ZOOM_STEP if delta > 0 else 1.0 / self.ZOOM_STEP
 
-            label_width = self.width()
-            label_height = self.height()
-            pixmap_width = pixmap.width()
-            pixmap_height = pixmap.height()
+        # Use _fit_zoom as minimum so user can't zoom out past the default view
+        new_zoom = max(self._fit_zoom, min(self.ZOOM_MAX, self._zoom * factor))
+        real_factor = new_zoom / self._zoom
 
-            x_offset = (label_width - pixmap_width) / 2
-            y_offset = (label_height - pixmap_height) / 2
+        # Keep the point under the cursor fixed
+        self._offset = cursor_pos - real_factor * (cursor_pos - self._offset)
+        self._zoom   = new_zoom
+        self.update()
 
-            click_x = event.position().x()
-            click_y = event.position().y()
+    def mousePressEvent(self, event):  # Mouse press event to handle storing color values and color conversion
+        if not self.image:
+            return
 
-            if (
-                click_x < x_offset or click_x > x_offset + pixmap_width or
-                click_y < y_offset or click_y > y_offset + pixmap_height
-            ):
-                return
+        # Right-click = reset zoom
+        if event.button() == Qt.RightButton:
+            self._fit_to_window()
+            self.update()
+            return
 
-            image_x = int((click_x - x_offset) * self.image.width() / pixmap_width)
-            image_y = int((click_y - y_offset) * self.image.height() / pixmap_height)
+        # Eyedropper takes priority over panning
+        if self.window().eyedropper_enabled:
+            self._pick_color(event.position())
+            return
 
-            image_x = max(0, min(self.image.width() - 1, image_x))
-            image_y = max(0, min(self.image.height() - 1, image_y))
+        # Left-drag = pan
+        if event.button() == Qt.LeftButton:
+            self._drag_start = event.position()
+            self._drag_orig  = QPointF(self._offset)
+            self.setCursor(QCursor(Qt.ClosedHandCursor))
 
-            color = self.image.pixelColor(image_x, image_y)
+    def mouseMoveEvent(self, event):
+        if self._drag_start is not None:
+            delta = event.position() - self._drag_start
+            self._offset = self._drag_orig + delta
+            self.update()
 
-            r = color.red()  # Gathers RBG values to make up a color
-            g = color.green()
-            b = color.blue()
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self._drag_start = None
+            self._drag_orig  = None
+            self.setCursor(QCursor(Qt.ArrowCursor))
 
-            # Normalize to 0–1
-            srgb = [r/255, g/255, b/255]
+    def _pick_color(self, widget_pos):
+        # Convert widget coords → image pixel coords accounting for zoom and pan
+        image_x = int((widget_pos.x() - self._offset.x()) / self._zoom)
+        image_y = int((widget_pos.y() - self._offset.y()) / self._zoom)
 
-            # HEX value
-            hex_value = color.name().upper()
+        # Bounds check
+        if not (0 <= image_x < self.image.width() and
+                0 <= image_y < self.image.height()):
+            return
 
-            # Convert sRGB → XYZ → Oklab
-            xyz = sRGB_to_XYZ(srgb)
-            oklab = XYZ_to_Oklab(xyz)
+        color = self.image.pixelColor(image_x, image_y)
 
-            L, a, b_val = oklab
+        r = color.red()   # Gathers RGB values to make up a color
+        g = color.green()
+        b = color.blue()
 
-            print("HEX:", hex_value)  # prints Hex Color
-            print("RGB:", r, g, b)  # Prints RBG values
-            print("OKLAB:", L, a, b_val)  # prints OKLAB converted values
+        # Normalize to 0–1
+        srgb = [r/255, g/255, b/255]
 
-            # Save in parent window
-            self.window().selected_hex = hex_value
-            self.window().selected_rgb = (r, g, b)
-            self.window().selected_oklab = (L, a, b_val)
+        # HEX value
+        hex_value = color.name().upper()
 
-            self.window().update_selected_color_display()
-            self.window().update_palette_from_selected_color()
+        # Convert sRGB → XYZ → Oklab
+        xyz   = sRGB_to_XYZ(srgb)
+        oklab = XYZ_to_Oklab(xyz)
+        L, a, b_val = oklab
+
+        print("HEX:", hex_value)   # Prints Hex Color
+        print("RGB:", r, g, b)     # Prints RGB values
+        print("OKLAB:", L, a, b_val)  # Prints OKLAB converted values
+
+        # Save in parent window
+        win = self.window()
+        win.selected_hex   = hex_value
+        win.selected_rgb   = (r, g, b)
+        win.selected_oklab = (L, a, b_val)
+        win.update_selected_color_display()
+        win.update_palette_from_selected_color()
 
 
 class MainWindow(QMainWindow):
@@ -130,10 +178,10 @@ class MainWindow(QMainWindow):
         self.selected_oklab = None
         self.generated_palette = []
         self.eyedropper_enabled = True
-        self.dark_mode = False
+        self.dark_mode = True
 
-        # Create image label inside the frame
-        self.image_label = ImageLabel(self.ui.Image_frame)
+        # Create zoomable image label inside the frame
+        self.image_label = ZoomableImageLabel(self.ui.Image_frame)
 
         # Put the image label inside the frame layout
         layout = QVBoxLayout(self.ui.Image_frame)
@@ -151,17 +199,15 @@ class MainWindow(QMainWindow):
 
     # Function used to open file explorer to upload an image
     def open_file_dialog(self):
-
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select Image",
             "",
             "Images (*.png *.jpg *.jpeg)"
         )
-
         if file_path:
             self.image_label.set_image(file_path)
-    
+
     def toggle_eyedropper(self):
         self.eyedropper_enabled = not self.eyedropper_enabled
 
@@ -169,6 +215,7 @@ class MainWindow(QMainWindow):
             self.ui.eyedropper_btn.setText("EyeDropper : On")
         else:
             self.ui.eyedropper_btn.setText("EyeDropper : Off")
+
     def toggle_theme(self):
         self.dark_mode = not self.dark_mode
         self.apply_theme()
@@ -272,7 +319,7 @@ class MainWindow(QMainWindow):
             "Cool":      [(-70, -80, -100), (-20, 0, 15), (10, 30, 45), (25, 50, 70), (-35, -40, -20), (-70, -75, -35)],
             "Moody":     [(-110, -110, -110), (-55, -45, -45), (20, 20, 20), (40, 35, 35), (-85, -70, -70), (-135, -120, -120)],
             "Neon":      [(-120, -120, -120), (40, -10, 40), (80, 50, 0), (100, 80, 35), (-40, -20, 10), (-80, -50, 30)],
-            "Pastel":     [(-40, -40, -40), (25, 20, 20), (55, 50, 50), (80, 75, 75), (-20, -20, -20), (-55, -55, -55)],
+            "Pastel":    [(-40, -40, -40), (25, 20, 20), (55, 50, 50), (80, 75, 75), (-20, -20, -20), (-55, -55, -55)],
             "Anime Cel": [(-100, -100, -100), (-20, -20, -20), (30, 30, 30), (65, 65, 65), (-55, -55, -55), (-125, -125, -125)],
         }
 
@@ -319,6 +366,7 @@ class MainWindow(QMainWindow):
             "Copied",
             f"Copied palette colors:\n{palette_string}"
         )
+
 
 app = QApplication(sys.argv)
 

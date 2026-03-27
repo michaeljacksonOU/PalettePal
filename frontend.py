@@ -130,7 +130,7 @@ class Ui_interface(object):
         
 
 
-
+        #Chat-gpt assisted with creating this loop
         #loop responsible for Creating the indivodual frames 
         for i, name in enumerate(frame_names):
 
@@ -159,7 +159,7 @@ class Ui_interface(object):
             container.addWidget(box)
             container.addWidget(hex_label)
 
-            # Position in grid
+            # Position in grid using a 2x2 display
             row = i // 2
             col = i % 2
 
