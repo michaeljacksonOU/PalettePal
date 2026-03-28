@@ -3,7 +3,7 @@ import colour
 from colour.models import sRGB_to_XYZ, XYZ_to_Oklab
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout, QMessageBox, QWidget
-from PySide6.QtGui import QPixmap, QImage, QPainter, QCursor
+from PySide6.QtGui import QPixmap, QImage, QPainter, QCursor,QFont
 from PySide6.QtCore import Qt, QPoint, QPointF
 from PIL import Image, ImageDraw, ImageFont
 
@@ -198,6 +198,8 @@ class MainWindow(QMainWindow):
         self.ui.eyedropper_btn.clicked.connect(self.toggle_eyedropper)
         self.ui.action_toggle_theme.triggered.connect(self.toggle_theme)
         self.ui.export_button.clicked.connect(lambda: self.export_palette(self.generated_palette))
+        self.ui.action_export_palette.triggered.connect(lambda: self.export_palette(self.generated_palette))
+        self.ui.upload_image.triggered.connect(self.open_file_dialog)
 
         self.apply_theme()
 
@@ -214,37 +216,53 @@ class MainWindow(QMainWindow):
     
     def export_palette(self, colors, filename="palette.png"):
         """
-        colors: list of HEX strings (e.g. ["#FF5733", "#33FF57", "#3357FF"])
+        Exports the generated palette as a PNG image.
+        Each color block includes a label and HEX value.
         """
-        
-        block_width = 200
-        block_height = 200
+    # Labels matching the order of your palette boxes in the UI
+        labels = ["Lineart", "Accent", "Highlight 1", "Highlight 2", "Shadow 1", "Shadow 2"]
 
-        width = block_width * len(colors)
+        block_width  = 200
+        block_height = 230  # Slightly taller to fit the label above the swatch
+
+        width  = block_width * len(colors)
         height = block_height
 
-        image = Image.new("RGB", (width, height), "white")
-        draw = ImageDraw.Draw(image)
+        image = Image.new("RGB", (width, height), "#3c3c3c")  # Dark background
+        draw  = ImageDraw.Draw(image)
 
         for i, color in enumerate(colors):
             x0 = i * block_width
             x1 = x0 + block_width
 
-            draw.rectangle([x0, 0, x1, block_height], fill=color)
+        # Draw the color name at the top of the block
+            label = labels[i] if i < len(labels) else f"Color {i+1}"
+            draw.text((x0 + 10, 10), label, fill="white")
 
-            # Optional: add HEX label
-            draw.text((x0 + 20, block_height - 30), color, fill="white")
+        # Draw the color swatch below the label
+            draw.rectangle([x0 + 10, 40, x1 - 10, 180], fill=color)
 
-        image.save(filename)
-        return filename
+        # Draw the HEX value below the swatch
+            draw.text((x0 + 10, 190), f"HEX: {color}", fill="white")
+
+    # Open a save dialog so the user can choose where to save
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Palette Image", "palette.png", "Images (*.png)"
+        )
+
+        if file_path:
+            image.save(file_path)
+            QMessageBox.information(self, "Exported", f"Palette saved to:\n{file_path}")
 
     def toggle_eyedropper(self):
         self.eyedropper_enabled = not self.eyedropper_enabled
 
         if self.eyedropper_enabled:
             self.ui.eyedropper_btn.setText("EyeDropper : On")
+            self.ui.eyedropper_btn.setToolTip("Use your cursor to select a color inside of an uploaded image")
         else:
             self.ui.eyedropper_btn.setText("EyeDropper : Off")
+            self.ui.eyedropper_btn.setToolTip("Use your cursor to drag the image around")
 
     def toggle_theme(self):
         self.dark_mode = not self.dark_mode
@@ -397,8 +415,12 @@ class MainWindow(QMainWindow):
             f"Copied palette colors:\n{palette_string}"
         )
 
+    
+
 
 app = QApplication(sys.argv)
+
+app.setFont(QFont("Segoe UI", 10))
 
 window = MainWindow()
 window.show()

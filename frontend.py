@@ -40,7 +40,9 @@ class Ui_interface(object):
 
         # UPLOAD BUTTON
         self.upload_btn = QPushButton("Upload Image")
+        self.upload_btn.setToolTip("Upload an image to interact with.")
         self.eyedropper_btn = QPushButton("EyeDropper : On")
+        self.eyedropper_btn.setToolTip("Use your cursor to select a color inside of an uploaded image")
         
         self.button_layout.addWidget(self.upload_btn)
         self.button_layout.addStretch()
@@ -86,7 +88,7 @@ class Ui_interface(object):
         self.Preset_frame.setMaximumHeight(50)
         #preset ComboBox
         self.Preset_combobox = QComboBox()
-        self.Preset_combobox.setFont(QFont("",14))
+        self.Preset_combobox.setFont(QFont("Segoe UI",14))
 
         self.Preset_combobox.addItems([
             "Natural", "Warm", "Cool", "Moody",
@@ -97,14 +99,16 @@ class Ui_interface(object):
 
         # Palette Generation frame
         self.Palette_frame = QFrame()
-        self.Palette_frame.setFrameShape(QFrame.StyledPanel)
+        # self.Palette_frame.setFrameShape(QFrame.StyledPanel)
+        self.Palette_frame.setFrameShape(QFrame.NoFrame)
         # self.Palette_frame.setFixedHeight(600)
 
         self.Palette_layout = QVBoxLayout(self.Palette_frame)
 
         self.palette_title = QLabel("Generated Palette")
         self.palette_title.setAlignment(Qt.AlignCenter)
-        self.palette_title.setFont(QFont("", 20))
+        self.palette_title.setFont(QFont("Segoe UI", 20))
+        self.palette_title.setStyleSheet("border: none;")
 
         self.Palette_layout.addWidget(self.palette_title)
         self.Palette_layout.setAlignment(Qt.AlignTop)
@@ -117,16 +121,20 @@ class Ui_interface(object):
         self.palette_labels = []
 
         self.copy_button = QPushButton("Copy Palette")
+        self.copy_button.setToolTip("Copy the HEX values of generated palette")
         self.copy_button.setFixedHeight(35)
 
         self.pop_out_button = QPushButton("Pop Out")
+        self.pop_out_button.setToolTip("Pop Palette out to use in another application")
         self.pop_out_button.setFixedHeight(35)
 
         self.export_button = QPushButton("Export Palette")
+        self.export_button.setToolTip("Export palette as a PNG")
         self.export_button.setFixedHeight(35)
 
         button_row = QHBoxLayout()
         button_row.addWidget(self.pop_out_button)
+        
         button_row.addStretch()
         button_row.addWidget(self.export_button)
         button_row.addStretch()
@@ -148,16 +156,19 @@ class Ui_interface(object):
             font= QFont()
             font.setPointSize(15)
             title.setFont(font)
+            title.setStyleSheet("border: none;")
 
              # Color box
             box = QFrame()
             box.setFixedSize(130, 80)
-            box.setFrameShape(QFrame.StyledPanel)
+            box.setFrameShape(QFrame.NoFrame)
+        
 
             # HEX label
             hex_label = QLabel("HEX:")
             hex_label.setAlignment(Qt.AlignCenter)
             hex_label.setFont(font)
+            hex_label.setStyleSheet("border: none;")
 
             # Add to vertical container
             container.addWidget(title)
@@ -200,26 +211,25 @@ class Ui_interface(object):
         self.menubar.setGeometry(QRect(0, 0, 1114, 26))
 
         self.menuPalettePal = QMenu("PalettePal", self.menubar) #will be updated with our logo for branding once created
-        self.menufile = QMenu("file", self.menubar)
-        self.menuSettings = QMenu("Settings", self.menubar)
-        self.menuWeekly_Challenges = QMenu("Weekly Challenges", self.menubar)
+        self.menufile = QMenu("File", self.menubar)
+        self.menuSettings = QMenu("Tools", self.menubar)
         #menu bar options
         #File button options
-        self.actionPlaceholder_1 = QAction("Placeholder 1", MainWindow)
-        self.actionPlaceholder_2 = QAction("Placeholder 2", MainWindow)
+        self.upload_image = QAction("Upload Image", MainWindow)
+        self.action_export_palette = QAction("Export Palette", MainWindow)
         #setting button options
         self.action_toggle_theme = QAction("Toggle Light/Dark Mode", MainWindow)
-        self.actionPlaceholder_4 = QAction("Placeholder 2", MainWindow)
+        self.faq = QAction("FAQ", MainWindow)
 
-        self.menufile.addAction(self.actionPlaceholder_1)
-        self.menufile.addAction(self.actionPlaceholder_2)
+        self.menufile.addAction(self.upload_image)
+        self.menufile.addAction(self.action_export_palette)
         self.menuSettings.addAction(self.action_toggle_theme)
-        self.menuSettings.addAction(self.actionPlaceholder_4)
+        self.menuSettings.addAction(self.faq)
 
         self.menubar.addMenu(self.menuPalettePal)
         self.menubar.addMenu(self.menufile)
         self.menubar.addMenu(self.menuSettings)
-        self.menubar.addMenu(self.menuWeekly_Challenges)
+        
 
         MainWindow.setMenuBar(self.menubar)
 
