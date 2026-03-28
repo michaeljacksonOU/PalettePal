@@ -116,16 +116,21 @@ class Ui_interface(object):
         self.palette_boxes = []
         self.palette_labels = []
 
-        self.export_button = QPushButton("Copy Palette")
-        self.export_button.setFixedHeight(35)
+        self.copy_button = QPushButton("Copy Palette")
+        self.copy_button.setFixedHeight(35)
 
         self.pop_out_button = QPushButton("Pop Out")
         self.pop_out_button.setFixedHeight(35)
+
+        self.export_button = QPushButton("Export Palette")
+        self.export_button.setFixedHeight(35)
 
         button_row = QHBoxLayout()
         button_row.addWidget(self.pop_out_button)
         button_row.addStretch()
         button_row.addWidget(self.export_button)
+        button_row.addStretch()
+        button_row.addWidget(self.copy_button)
         
         
 

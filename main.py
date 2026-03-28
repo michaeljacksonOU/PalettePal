@@ -5,6 +5,7 @@ from colour.models import sRGB_to_XYZ, XYZ_to_Oklab
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout, QMessageBox, QWidget
 from PySide6.QtGui import QPixmap, QImage, QPainter, QCursor
 from PySide6.QtCore import Qt, QPoint, QPointF
+from PIL import Image, ImageDraw, ImageFont
 
 from frontend import Ui_interface
 
@@ -163,6 +164,8 @@ class ZoomableImageLabel(QWidget):
         win.update_selected_color_display()
         win.update_palette_from_selected_color()
 
+    
+
 
 class MainWindow(QMainWindow):
 
@@ -190,10 +193,11 @@ class MainWindow(QMainWindow):
 
         # Connect upload button
         self.ui.upload_btn.clicked.connect(self.open_file_dialog)
-        self.ui.export_button.clicked.connect(self.copy_palette_colors)
+        self.ui.copy_button.clicked.connect(self.copy_palette_colors)
         self.ui.Preset_combobox.currentIndexChanged.connect(self.update_palette_from_selected_color)
         self.ui.eyedropper_btn.clicked.connect(self.toggle_eyedropper)
         self.ui.action_toggle_theme.triggered.connect(self.toggle_theme)
+        self.ui.export_button.clicked.connect(lambda: self.export_palette(self.generated_palette))
 
         self.apply_theme()
 
@@ -207,6 +211,32 @@ class MainWindow(QMainWindow):
         )
         if file_path:
             self.image_label.set_image(file_path)
+    
+    def export_palette(self, colors, filename="palette.png"):
+        """
+        colors: list of HEX strings (e.g. ["#FF5733", "#33FF57", "#3357FF"])
+        """
+        
+        block_width = 200
+        block_height = 200
+
+        width = block_width * len(colors)
+        height = block_height
+
+        image = Image.new("RGB", (width, height), "white")
+        draw = ImageDraw.Draw(image)
+
+        for i, color in enumerate(colors):
+            x0 = i * block_width
+            x1 = x0 + block_width
+
+            draw.rectangle([x0, 0, x1, block_height], fill=color)
+
+            # Optional: add HEX label
+            draw.text((x0 + 20, block_height - 30), color, fill="white")
+
+        image.save(filename)
+        return filename
 
     def toggle_eyedropper(self):
         self.eyedropper_enabled = not self.eyedropper_enabled
