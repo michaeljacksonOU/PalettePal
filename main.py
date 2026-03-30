@@ -2,6 +2,9 @@ import sys
 import colour
 from colour.models import sRGB_to_XYZ, XYZ_to_Oklab
 
+from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout, QMessageBox, QWidget, QGridLayout, QFrame
+from PySide6.QtGui import QPixmap, QImage
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout, QMessageBox, QWidget
 from PySide6.QtGui import QPixmap, QImage, QPainter, QCursor,QFont
 from PySide6.QtCore import Qt, QPoint, QPointF
@@ -166,6 +169,49 @@ class ZoomableImageLabel(QWidget):
 
     
 
+class PalettePopout(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Palette")
+        self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
+        self.resize(350, 400)
+
+        self.layout = QVBoxLayout(self)
+        self.grid = QGridLayout()
+        self.layout.addLayout(self.grid)
+
+        self.boxes = []
+        self.labels = []
+
+        names = ["Lineart","Accent","Highlight 1","Highlight 2","Shadow 1","Shadow 2"]
+
+        for i, name in enumerate(names):
+            v = QVBoxLayout()
+
+            label = QLabel(name)
+            label.setAlignment(Qt.AlignCenter)
+
+            box = QFrame()
+            box.setFixedSize(120, 70)
+            box.setFrameShape(QFrame.Box)
+
+            hex_label = QLabel("HEX")
+            hex_label.setAlignment(Qt.AlignCenter)
+
+            v.addWidget(label)
+            v.addWidget(box, alignment=Qt.AlignCenter)
+            v.addWidget(hex_label)
+
+            self.grid.addLayout(v, i//2, i%2)
+
+            self.boxes.append(box)
+            self.labels.append(hex_label)
+
+    def update_palette(self, colors):
+        for i, c in enumerate(colors):
+            if i < len(self.boxes):
+                self.boxes[i].setStyleSheet(f"background:{c}; border:1px solid black;")
+                self.labels[i].setText(c)
 
 class MainWindow(QMainWindow):
 
@@ -174,6 +220,8 @@ class MainWindow(QMainWindow):
 
         self.ui = Ui_interface()
         self.ui.setupUi(self)
+        self.popout = None
+        self.ui.pop_out_button.clicked.connect(self.toggle_popout)
 
         # Variables to store selected color
         self.selected_hex = None
@@ -202,6 +250,22 @@ class MainWindow(QMainWindow):
         self.ui.upload_image.triggered.connect(self.open_file_dialog)
 
         self.apply_theme()
+    
+    def toggle_popout(self):
+        if self.popout is None:
+            self.popout = PalettePopout()
+            if self.generated_palette:
+                self.popout.update_palette(self.generated_palette)
+            self.popout.show()
+        else:
+            if self.popout.isVisible():
+                self.popout.hide()
+            else:
+                if self.generated_palette:
+                    self.popout.update_palette(self.generated_palette)
+                self.popout.show()
+                self.popout.raise_()
+                self.popout.activateWindow()
 
     # Function used to open file explorer to upload an image
     def open_file_dialog(self):
@@ -278,7 +342,7 @@ class MainWindow(QMainWindow):
                 QPushButton, QComboBox {
                     background-color: #3a3a3a;
                     color: white;
-                    border: 1px solid #555;
+                    border: none;
                     padding: 4px;
                 }
                 QLabel {
@@ -300,7 +364,7 @@ class MainWindow(QMainWindow):
                 }
                 QFrame {
                     background-color: #353535;
-                    border: 1px solid #555;
+                    border: none;
                 }
             """)
         else:
@@ -312,7 +376,7 @@ class MainWindow(QMainWindow):
                 QPushButton, QComboBox {
                     background-color: white;
                     color: black;
-                    border: 1px solid #999;
+                    border: none;
                     padding: 4px;
                 }
                 QLabel {
@@ -334,7 +398,7 @@ class MainWindow(QMainWindow):
                 }
                 QFrame {
                     background-color: white;
-                    border: 1px solid #999;
+                    border: none;
                 }
             """)
 
@@ -396,6 +460,9 @@ class MainWindow(QMainWindow):
                 f"background-color: {hex_color}; border: 1px solid black;"
             )
             self.ui.palette_labels[i].setText(f"HEX: {hex_color}")
+        
+        if self.popout:
+            self.popout.update_palette(self.generated_palette)
 
     def copy_palette_colors(self):
         if not self.generated_palette:
