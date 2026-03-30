@@ -32,7 +32,7 @@ class Ui_interface(object):
 
         # IMAGE FRAME
         self.Image_frame = QFrame()
-        self.Image_frame.setFrameShape(QFrame.StyledPanel)
+        self.Image_frame.setFrameShape(QFrame.NoFrame)
         self.Image_frame.setMinimumHeight(500)
 
         #button row
@@ -50,7 +50,7 @@ class Ui_interface(object):
         # Selected color section
         #*Outer Container for the selected color frame
         self.Selected_color_frame_2 = QFrame()
-        self.Selected_color_frame_2.setFrameShape(QFrame.StyledPanel)
+        self.Selected_color_frame_2.setFrameShape(QFrame.NoFrame)
 
         self.Selected_color_frame_2_layout = QVBoxLayout(self.Selected_color_frame_2)
         #Properties for selected color text
@@ -62,7 +62,7 @@ class Ui_interface(object):
         #Frame responsible for displaying selcted color
 
         self.Selected_color_frame = QFrame()
-        self.Selected_color_frame.setFrameShape(QFrame.StyledPanel)
+        self.Selected_color_frame.setFrameShape(QFrame.Box)
         self.Selected_color_frame.setFixedSize(120,80)
 
         self.hex_label = QLabel("HEX")
@@ -80,7 +80,7 @@ class Ui_interface(object):
 
         # Preset Frame
         self.Preset_frame = QFrame()
-        self.Preset_frame.setFrameShape(QFrame.StyledPanel)
+        self.Preset_frame.setFrameShape(QFrame.NoFrame)
 
         self.Preset_layout = QVBoxLayout(self.Preset_frame)
         self.Preset_frame.setMaximumHeight(50)
@@ -97,7 +97,7 @@ class Ui_interface(object):
 
         # Palette Generation frame
         self.Palette_frame = QFrame()
-        self.Palette_frame.setFrameShape(QFrame.StyledPanel)
+        self.Palette_frame.setFrameShape(QFrame.NoFrame)
         # self.Palette_frame.setFixedHeight(600)
 
         self.Palette_layout = QVBoxLayout(self.Palette_frame)
@@ -147,7 +147,7 @@ class Ui_interface(object):
              # Color box
             box = QFrame()
             box.setFixedSize(130, 80)
-            box.setFrameShape(QFrame.StyledPanel)
+            box.setFrameShape(QFrame.Box)
 
             # HEX label
             hex_label = QLabel("HEX:")
