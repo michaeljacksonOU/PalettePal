@@ -183,7 +183,7 @@ class PalettePopout(QWidget):
         self.boxes = []
         self.labels = []
 
-        names = ["Lineart","Accent","Highlight 1","Highlight 2","Shadow 1","Shadow 2"]
+        names = ["Lineart", "Accent", "Highlight 1", "Highlight 2", "Shadow 1", "Shadow 2"]
 
         for i, name in enumerate(names):
             v = QVBoxLayout()
@@ -202,15 +202,49 @@ class PalettePopout(QWidget):
             v.addWidget(box, alignment=Qt.AlignCenter)
             v.addWidget(hex_label)
 
-            self.grid.addLayout(v, i//2, i%2)
+            self.grid.addLayout(v, i // 2, i % 2)
 
             self.boxes.append(box)
             self.labels.append(hex_label)
 
+        self.apply_theme(False)
+
+    def apply_theme(self, dark_mode):
+        if dark_mode:
+            self.setStyleSheet("""
+                QWidget {
+                    background-color: #2b2b2b;
+                    color: white;
+                }
+                QLabel {
+                    color: white;
+                    border: none;
+                }
+                QFrame {
+                    background-color: #353535;
+                    border: none;
+                }
+            """)
+        else:
+            self.setStyleSheet("""
+                QWidget {
+                    background-color: #f5f5f5;
+                    color: black;
+                }
+                QLabel {
+                    color: black;
+                    border: none;
+                }
+                QFrame {
+                    background-color: white;
+                    border: none;
+                }
+            """)
+
     def update_palette(self, colors):
         for i, c in enumerate(colors):
             if i < len(self.boxes):
-                self.boxes[i].setStyleSheet(f"background:{c}; border:1px solid black;")
+                self.boxes[i].setStyleSheet(f"background-color: {c}; border: 1px solid black;")
                 self.labels[i].setText(c)
 
 class MainWindow(QMainWindow):
@@ -254,6 +288,7 @@ class MainWindow(QMainWindow):
     def toggle_popout(self):
         if self.popout is None:
             self.popout = PalettePopout()
+            self.popout.apply_theme(self.dark_mode)
             if self.generated_palette:
                 self.popout.update_palette(self.generated_palette)
             self.popout.show()
@@ -261,6 +296,7 @@ class MainWindow(QMainWindow):
             if self.popout.isVisible():
                 self.popout.hide()
             else:
+                self.popout.apply_theme(self.dark_mode)
                 if self.generated_palette:
                     self.popout.update_palette(self.generated_palette)
                 self.popout.show()
@@ -401,6 +437,8 @@ class MainWindow(QMainWindow):
                     border: none;
                 }
             """)
+        if self.popout:
+            self.popout.apply_theme(self.dark_mode)
 
     def update_selected_color_display(self):
         if not self.selected_hex:
