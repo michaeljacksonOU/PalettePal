@@ -2,41 +2,46 @@ import sys
 import colour
 from colour.models import sRGB_to_XYZ, XYZ_to_Oklab
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout, QMessageBox, QWidget, QGridLayout, QFrame
-from PySide6.QtGui import QPixmap, QImage
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout, QMessageBox, QWidget
-from PySide6.QtGui import QPixmap, QImage, QPainter, QCursor,QFont
-from PySide6.QtCore import Qt, QPoint, QPointF
-from PIL import Image, ImageDraw, ImageFont
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout,
+    QMessageBox, QWidget, QGridLayout, QFrame
+)
+from PySide6.QtGui import QPixmap, QImage, QPainter, QCursor, QFont
+from PySide6.QtCore import Qt, QPointF
+from PIL import Image, ImageDraw
 
 from frontend import Ui_interface
+from init_db import initialize_database
+from db_operations import (
+    create_project_session,
+    save_palette_result,
+    link_palette_to_preset
+)
 
 
 class ZoomableImageLabel(QWidget):
-    #Widget resonsible that displays an image with zoom and pan support
-    ZOOM_STEP = 1.15 #Zoom increment percentage 
-    ZOOM_MIN  = 0.05
-    ZOOM_MAX  = 20.0 #max zoom level
+    ZOOM_STEP = 1.15
+    ZOOM_MIN = 0.05
+    ZOOM_MAX = 20.0
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.image       = None #holds the loaded QImage 
-        self._zoom       = 1.0 # current zoom level
-        self._fit_zoom   = 1.0  # Stores default zoom level to restrict zoom out
-        self._offset     = QPointF(0, 0) #the top-level corner position of the image inside the widget 
-        self._drag_start = None # stores mouse position when a pan begins 
-        self._drag_orig  = None #stores the image offset when a drag begins
+        self.image = None
+        self._zoom = 1.0
+        self._fit_zoom = 1.0
+        self._offset = QPointF(0, 0)
+        self._drag_start = None
+        self._drag_orig = None
         self.setMouseTracking(True)
 
     def set_image(self, path):
         self.image = QImage(path)
 
-        # Limit resolution (Paul task #2)
         max_w, max_h = 1920, 1080
         if self.image.width() > max_w or self.image.height() > max_h:
             self.image = self.image.scaled(
-                max_w, max_h,
+                max_w,
+                max_h,
                 Qt.KeepAspectRatio,
                 Qt.SmoothTransformation
             )
@@ -50,7 +55,7 @@ class ZoomableImageLabel(QWidget):
         iw, ih = self.image.width(), self.image.height()
         ww, wh = self.width() or 1, self.height() or 1
         self._zoom = min(ww / iw, wh / ih)
-        self._fit_zoom = self._zoom  # Save the default zoom level to use as zoom out limit
+        self._fit_zoom = self._zoom
         self._center_image()
 
     def _center_image(self):
@@ -59,14 +64,13 @@ class ZoomableImageLabel(QWidget):
         iw = self.image.width() * self._zoom
         ih = self.image.height() * self._zoom
         self._offset = QPointF(
-            (self.width()  - iw) / 2,
+            (self.width() - iw) / 2,
             (self.height() - ih) / 2,
         )
 
     def resizeEvent(self, event):
         self._fit_to_window()
         super().resizeEvent(event)
-    #Draws the image at the current zoom level and offset position 
 
     def paintEvent(self, event):
         if not self.image:
@@ -81,39 +85,33 @@ class ZoomableImageLabel(QWidget):
         if not self.image:
             return
 
-        # Zoom centred on the cursor position
         cursor_pos = QPointF(event.position())
         delta = event.angleDelta().y()
         factor = self.ZOOM_STEP if delta > 0 else 1.0 / self.ZOOM_STEP
 
-        # Use _fit_zoom as minimum so user can't zoom out past the default view
         new_zoom = max(self._fit_zoom, min(self.ZOOM_MAX, self._zoom * factor))
         real_factor = new_zoom / self._zoom
 
-        # Keep the point under the cursor fixed
         self._offset = cursor_pos - real_factor * (cursor_pos - self._offset)
-        self._zoom   = new_zoom
+        self._zoom = new_zoom
         self.update()
 
-    def mousePressEvent(self, event):  # Mouse press event to handle storing color values and color conversion
+    def mousePressEvent(self, event):
         if not self.image:
             return
 
-        # Right-click = reset zoom
         if event.button() == Qt.RightButton:
             self._fit_to_window()
             self.update()
             return
 
-        # Eyedropper takes priority over panning
         if self.window().eyedropper_enabled:
             self._pick_color(event.position())
             return
 
-        # Left-drag = pan
         if event.button() == Qt.LeftButton:
             self._drag_start = event.position()
-            self._drag_orig  = QPointF(self._offset)
+            self._drag_orig = QPointF(self._offset)
             self.setCursor(QCursor(Qt.ClosedHandCursor))
 
     def mouseMoveEvent(self, event):
@@ -125,49 +123,36 @@ class ZoomableImageLabel(QWidget):
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self._drag_start = None
-            self._drag_orig  = None
+            self._drag_orig = None
             self.setCursor(QCursor(Qt.ArrowCursor))
 
     def _pick_color(self, widget_pos):
-        # Convert widget coords → image pixel coords accounting for zoom and pan
         image_x = int((widget_pos.x() - self._offset.x()) / self._zoom)
         image_y = int((widget_pos.y() - self._offset.y()) / self._zoom)
 
-        # Bounds check
-        if not (0 <= image_x < self.image.width() and
-                0 <= image_y < self.image.height()):
+        if not (0 <= image_x < self.image.width() and 0 <= image_y < self.image.height()):
             return
 
         color = self.image.pixelColor(image_x, image_y)
 
-        r = color.red()   # Gathers RGB values to make up a color
+        r = color.red()
         g = color.green()
         b = color.blue()
 
-        # Normalize to 0–1
-        srgb = [r/255, g/255, b/255]
-
-        # HEX value
+        srgb = [r / 255, g / 255, b / 255]
         hex_value = color.name().upper()
 
-        # Convert sRGB → XYZ → Oklab
-        xyz   = sRGB_to_XYZ(srgb)
+        xyz = sRGB_to_XYZ(srgb)
         oklab = XYZ_to_Oklab(xyz)
         L, a, b_val = oklab
 
-        print("HEX:", hex_value)   # Prints Hex Color
-        print("RGB:", r, g, b)     # Prints RGB values
-        print("OKLAB:", L, a, b_val)  # Prints OKLAB converted values
-
-        # Save in parent window
         win = self.window()
-        win.selected_hex   = hex_value
-        win.selected_rgb   = (r, g, b)
+        win.selected_hex = hex_value
+        win.selected_rgb = (r, g, b)
         win.selected_oklab = (L, a, b_val)
         win.update_selected_color_display()
         win.update_palette_from_selected_color()
 
-    
 
 class PalettePopout(QWidget):
     def __init__(self):
@@ -247,8 +232,8 @@ class PalettePopout(QWidget):
                 self.boxes[i].setStyleSheet(f"background-color: {c}; border: 1px solid black;")
                 self.labels[i].setText(c)
 
-class MainWindow(QMainWindow):
 
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
@@ -257,7 +242,6 @@ class MainWindow(QMainWindow):
         self.popout = None
         self.ui.pop_out_button.clicked.connect(self.toggle_popout)
 
-        # Variables to store selected color
         self.selected_hex = None
         self.selected_rgb = None
         self.selected_oklab = None
@@ -265,15 +249,15 @@ class MainWindow(QMainWindow):
         self.eyedropper_enabled = True
         self.dark_mode = True
 
-        # Create zoomable image label inside the frame
+        self.current_image_path = None
+        self.current_session_id = None
+
         self.image_label = ZoomableImageLabel(self.ui.Image_frame)
 
-        # Put the image label inside the frame layout
         layout = QVBoxLayout(self.ui.Image_frame)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.image_label)
 
-        # Connect upload button
         self.ui.upload_btn.clicked.connect(self.open_file_dialog)
         self.ui.copy_button.clicked.connect(self.copy_palette_colors)
         self.ui.Preset_combobox.currentIndexChanged.connect(self.update_palette_from_selected_color)
@@ -284,7 +268,7 @@ class MainWindow(QMainWindow):
         self.ui.upload_image.triggered.connect(self.open_file_dialog)
 
         self.apply_theme()
-    
+
     def toggle_popout(self):
         if self.popout is None:
             self.popout = PalettePopout()
@@ -303,7 +287,6 @@ class MainWindow(QMainWindow):
                 self.popout.raise_()
                 self.popout.activateWindow()
 
-    # Function used to open file explorer to upload an image
     def open_file_dialog(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
@@ -312,47 +295,74 @@ class MainWindow(QMainWindow):
             "Images (*.png *.jpg *.jpeg)"
         )
         if file_path:
+            self.current_image_path = file_path
             self.image_label.set_image(file_path)
-    
+
+            preset_name = self.ui.Preset_combobox.currentText()
+            self.current_session_id = create_project_session(file_path, preset_name)
+
+            self.statusBar().showMessage(
+                f"Image loaded. Session {self.current_session_id} created.",
+                5000
+            )
+
     def export_palette(self, colors, filename="palette.png"):
-        """
-        Exports the generated palette as a PNG image.
-        Each color block includes a label and HEX value.
-        """
-    # Labels matching the order of your palette boxes in the UI
+        if not colors:
+            QMessageBox.information(self, "No Palette", "Generate a palette first.")
+            return
+
         labels = ["Lineart", "Accent", "Highlight 1", "Highlight 2", "Shadow 1", "Shadow 2"]
 
-        block_width  = 200
-        block_height = 230  # Slightly taller to fit the label above the swatch
+        block_width = 200
+        block_height = 230
 
-        width  = block_width * len(colors)
+        width = block_width * len(colors)
         height = block_height
 
-        image = Image.new("RGB", (width, height), "#3c3c3c")  # Dark background
-        draw  = ImageDraw.Draw(image)
+        image = Image.new("RGB", (width, height), "#3c3c3c")
+        draw = ImageDraw.Draw(image)
 
         for i, color in enumerate(colors):
             x0 = i * block_width
             x1 = x0 + block_width
 
-        # Draw the color name at the top of the block
             label = labels[i] if i < len(labels) else f"Color {i+1}"
             draw.text((x0 + 10, 10), label, fill="white")
-
-        # Draw the color swatch below the label
             draw.rectangle([x0 + 10, 40, x1 - 10, 180], fill=color)
-
-        # Draw the HEX value below the swatch
             draw.text((x0 + 10, 190), f"HEX: {color}", fill="white")
 
-    # Open a save dialog so the user can choose where to save
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save Palette Image", "palette.png", "Images (*.png)"
+            self, "Save Palette Image", filename, "Images (*.png)"
         )
 
         if file_path:
             image.save(file_path)
-            QMessageBox.information(self, "Exported", f"Palette saved to:\n{file_path}")
+
+            if self.current_session_id and self.selected_hex and len(colors) >= 6:
+                preset_name = self.ui.Preset_combobox.currentText()
+
+                result_id = save_palette_result(
+                    session_id=self.current_session_id,
+                    base_color_hex=self.selected_hex,
+                    preset_environment=preset_name,
+                    preset_style="Current UI Palette",
+                    lineart_hex=colors[0],
+                    accent_hex=colors[1],
+                    highlight1_hex=colors[2],
+                    highlight2_hex=colors[3],
+                    shadow1_hex=colors[4],
+                    shadow2_hex=colors[5]
+                )
+
+                link_palette_to_preset(result_id, preset_name)
+
+                QMessageBox.information(
+                    self,
+                    "Exported",
+                    f"Palette saved to:\n{file_path}\n\nDatabase Result ID: {result_id}"
+                )
+            else:
+                QMessageBox.information(self, "Exported", f"Palette saved to:\n{file_path}")
 
     def toggle_eyedropper(self):
         self.eyedropper_enabled = not self.eyedropper_enabled
@@ -498,7 +508,7 @@ class MainWindow(QMainWindow):
                 f"background-color: {hex_color}; border: 1px solid black;"
             )
             self.ui.palette_labels[i].setText(f"HEX: {hex_color}")
-        
+
         if self.popout:
             self.popout.update_palette(self.generated_palette)
 
@@ -520,14 +530,14 @@ class MainWindow(QMainWindow):
             f"Copied palette colors:\n{palette_string}"
         )
 
-    
 
+if __name__ == "__main__":
+    initialize_database()
 
-app = QApplication(sys.argv)
+    app = QApplication(sys.argv)
+    app.setFont(QFont("Segoe UI", 10))
 
-app.setFont(QFont("Segoe UI", 10))
+    window = MainWindow()
+    window.show()
 
-window = MainWindow()
-window.show()
-
-app.exec()
+    app.exec()
