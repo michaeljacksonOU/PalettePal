@@ -170,7 +170,7 @@ class ZoomableImageLabel(QWidget):
     
 
 class PalettePopout(QWidget):
-    def __init__(self):
+    def __init__(self, dark_mode=False):
         super().__init__()
         self.setWindowTitle("Palette")
         self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
@@ -207,7 +207,7 @@ class PalettePopout(QWidget):
             self.boxes.append(box)
             self.labels.append(hex_label)
 
-        self.apply_theme(False)
+        self.apply_theme(dark_mode)
 
     def apply_theme(self, dark_mode):
         if dark_mode:
@@ -287,8 +287,7 @@ class MainWindow(QMainWindow):
     
     def toggle_popout(self):
         if self.popout is None:
-            self.popout = PalettePopout()
-            self.popout.apply_theme(self.dark_mode)
+            self.popout = PalettePopout(self.dark_mode)
             if self.generated_palette:
                 self.popout.update_palette(self.generated_palette)
             self.popout.show()
