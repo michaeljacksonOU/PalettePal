@@ -1,4 +1,5 @@
 import sys
+import colorsys
 import colour
 from colour.models import sRGB_to_XYZ, XYZ_to_Oklab
 
@@ -470,6 +471,32 @@ class MainWindow(QMainWindow):
             self.clamp(b)
         )
 
+    def rgb_to_hsv(self, r, g, b):
+        r_norm = r / 255.0
+        g_norm = g / 255.0
+        b_norm = b / 255.0
+        h, s, v = colorsys.rgb_to_hsv(r_norm, g_norm, b_norm)
+        return h, s, v
+
+    def hsv_to_rgb(self, h, s, v):
+        h = h % 1.0
+        s = max(0.0, min(1.0, s))
+        v = max(0.0, min(1.0, v))
+
+        r, g, b = colorsys.hsv_to_rgb(h, s, v)
+        return (
+            int(round(r * 255)),
+            int(round(g * 255)),
+            int(round(b * 255))
+        )
+
+    def apply_rule(self, h, s, v, rule):
+        new_h = (h + rule.get("dH", 0.0)) % 1.0
+        new_s = max(0.0, min(1.0, s + rule.get("dS", 0.0)))
+        new_v = max(0.0, min(1.0, v + rule.get("dV", 0.0)))
+
+        return self.hsv_to_rgb(new_h, new_s, new_v)
+
     def generate_palette(self, base_rgb, preset_name):
         r, g, b = base_rgb
         h, s, v = self.rgb_to_hsv(r, g, b)
@@ -554,11 +581,11 @@ class MainWindow(QMainWindow):
 
         palette = [
             self.rgb_to_hex(lineart),
-            self.rgb_to_hex(shadow1),
-            self.rgb_to_hex(shadow2),
+            self.rgb_to_hex(accent),
             self.rgb_to_hex(highlight1),
             self.rgb_to_hex(highlight2),
-            self.rgb_to_hex(accent),
+            self.rgb_to_hex(shadow1),
+            self.rgb_to_hex(shadow2),
         ]
 
         return palette
