@@ -11,7 +11,7 @@ from PySide6.QtCore import Qt, QPointF
 from PIL import Image, ImageDraw
 
 from frontend import Ui_interface
-from init_db import initialize_database
+from Init_db import initialize_database
 from db_operations import (
     create_project_session,
     save_palette_result,
