@@ -1,4 +1,5 @@
 import sys
+import logging
 import colour
 from colour.models import sRGB_to_XYZ, XYZ_to_Oklab
 
@@ -6,17 +7,29 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout,
     QMessageBox, QWidget, QGridLayout, QFrame
 )
-from PySide6.QtGui import QPixmap, QImage, QPainter, QCursor, QFont
+from PySide6.QtGui import QImage, QPainter, QCursor, QFont
 from PySide6.QtCore import Qt, QPointF
 from PIL import Image, ImageDraw
 
 from frontend import Ui_interface
+from logger_config import setup_logger
 from init_db import initialize_database
 from db_operations import (
     create_project_session,
     save_palette_result,
     link_palette_to_preset
 )
+
+
+def handle_exception(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+
+    logging.critical(
+        "Unhandled exception",
+        exc_info=(exc_type, exc_value, exc_traceback)
+    )
 
 
 class ZoomableImageLabel(QWidget):
@@ -35,19 +48,27 @@ class ZoomableImageLabel(QWidget):
         self.setMouseTracking(True)
 
     def set_image(self, path):
-        self.image = QImage(path)
+        try:
+            self.image = QImage(path)
 
-        max_w, max_h = 1920, 1080
-        if self.image.width() > max_w or self.image.height() > max_h:
-            self.image = self.image.scaled(
-                max_w,
-                max_h,
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
-            )
+            if self.image.isNull():
+                raise ValueError("The selected file could not be loaded as an image.")
 
-        self._fit_to_window()
-        self.update()
+            max_w, max_h = 1920, 1080
+            if self.image.width() > max_w or self.image.height() > max_h:
+                self.image = self.image.scaled(
+                    max_w,
+                    max_h,
+                    Qt.KeepAspectRatio,
+                    Qt.SmoothTransformation
+                )
+
+            self._fit_to_window()
+            self.update()
+
+        except Exception:
+            logging.exception("Error in set_image")
+            raise
 
     def _fit_to_window(self):
         if not self.image:
@@ -106,7 +127,15 @@ class ZoomableImageLabel(QWidget):
             return
 
         if self.window().eyedropper_enabled:
-            self._pick_color(event.position())
+            try:
+                self._pick_color(event.position())
+            except Exception as e:
+                logging.exception("Error while picking color")
+                QMessageBox.critical(
+                    self.window(),
+                    "Color Selection Error",
+                    f"An error occurred while selecting a color:\n{e}"
+                )
             return
 
         if event.button() == Qt.LeftButton:
@@ -288,13 +317,17 @@ class MainWindow(QMainWindow):
                 self.popout.activateWindow()
 
     def open_file_dialog(self):
-        file_path, _ = QFileDialog.getOpenFileName(
-            self,
-            "Select Image",
-            "",
-            "Images (*.png *.jpg *.jpeg)"
-        )
-        if file_path:
+        try:
+            file_path, _ = QFileDialog.getOpenFileName(
+                self,
+                "Select Image",
+                "",
+                "Images (*.png *.jpg *.jpeg)"
+            )
+
+            if not file_path:
+                return
+
             self.current_image_path = file_path
             self.image_label.set_image(file_path)
 
@@ -306,63 +339,92 @@ class MainWindow(QMainWindow):
                 5000
             )
 
+        except Exception as e:
+            logging.exception("Error while uploading image")
+            QMessageBox.critical(
+                self,
+                "Upload Error",
+                f"An error occurred while loading the image:\n{e}"
+            )
+
     def export_palette(self, colors, filename="palette.png"):
-        if not colors:
-            QMessageBox.information(self, "No Palette", "Generate a palette first.")
-            return
+        try:
+            if not colors:
+                QMessageBox.information(self, "No Palette", "Generate a palette first.")
+                return
 
-        labels = ["Lineart", "Accent", "Highlight 1", "Highlight 2", "Shadow 1", "Shadow 2"]
+            if not self.current_session_id:
+                QMessageBox.information(self, "No Session", "Upload an image first.")
+                return
 
-        block_width = 200
-        block_height = 230
+            if not self.selected_hex:
+                QMessageBox.information(self, "No Color Selected", "Select a color from the image first.")
+                return
 
-        width = block_width * len(colors)
-        height = block_height
+            labels = ["Lineart", "Accent", "Highlight 1", "Highlight 2", "Shadow 1", "Shadow 2"]
 
-        image = Image.new("RGB", (width, height), "#3c3c3c")
-        draw = ImageDraw.Draw(image)
+            block_width = 200
+            block_height = 230
 
-        for i, color in enumerate(colors):
-            x0 = i * block_width
-            x1 = x0 + block_width
+            width = block_width * len(colors)
+            height = block_height
 
-            label = labels[i] if i < len(labels) else f"Color {i+1}"
-            draw.text((x0 + 10, 10), label, fill="white")
-            draw.rectangle([x0 + 10, 40, x1 - 10, 180], fill=color)
-            draw.text((x0 + 10, 190), f"HEX: {color}", fill="white")
+            image = Image.new("RGB", (width, height), "#3c3c3c")
+            draw = ImageDraw.Draw(image)
 
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save Palette Image", filename, "Images (*.png)"
-        )
+            for i, color in enumerate(colors):
+                x0 = i * block_width
+                x1 = x0 + block_width
 
-        if file_path:
+                label = labels[i] if i < len(labels) else f"Color {i+1}"
+                draw.text((x0 + 10, 10), label, fill="white")
+                draw.rectangle([x0 + 10, 40, x1 - 10, 180], fill=color)
+                draw.text((x0 + 10, 190), f"HEX: {color}", fill="white")
+
+            file_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "Save Palette Image",
+                filename,
+                "Images (*.png)"
+            )
+
+            if not file_path:
+                return
+
             image.save(file_path)
 
-            if self.current_session_id and self.selected_hex and len(colors) >= 6:
-                preset_name = self.ui.Preset_combobox.currentText()
+            preset_name = self.ui.Preset_combobox.currentText()
 
-                result_id = save_palette_result(
-                    session_id=self.current_session_id,
-                    base_color_hex=self.selected_hex,
-                    preset_environment=preset_name,
-                    preset_style="Current UI Palette",
-                    lineart_hex=colors[0],
-                    accent_hex=colors[1],
-                    highlight1_hex=colors[2],
-                    highlight2_hex=colors[3],
-                    shadow1_hex=colors[4],
-                    shadow2_hex=colors[5]
-                )
+            result_id = save_palette_result(
+                session_id=self.current_session_id,
+                base_color_hex=self.selected_hex,
+                preset_environment=preset_name,
+                preset_style="Current UI Palette",
+                lineart_hex=colors[0],
+                accent_hex=colors[1],
+                highlight1_hex=colors[2],
+                highlight2_hex=colors[3],
+                shadow1_hex=colors[4],
+                shadow2_hex=colors[5]
+            )
 
-                link_palette_to_preset(result_id, preset_name)
+            link_palette_to_preset(result_id, preset_name)
 
-                QMessageBox.information(
-                    self,
-                    "Exported",
-                    f"Palette saved to:\n{file_path}\n\nDatabase Result ID: {result_id}"
-                )
-            else:
-                QMessageBox.information(self, "Exported", f"Palette saved to:\n{file_path}")
+            QMessageBox.information(
+                self,
+                "Export Complete",
+                f"Palette exported and saved to database.\n\n"
+                f"PNG: {file_path}\n"
+                f"Database Result ID: {result_id}"
+            )
+
+        except Exception as e:
+            logging.exception("Error while exporting palette")
+            QMessageBox.critical(
+                self,
+                "Export Error",
+                f"An error occurred during export:\n{e}"
+            )
 
     def toggle_eyedropper(self):
         self.eyedropper_enabled = not self.eyedropper_enabled
@@ -497,41 +559,61 @@ class MainWindow(QMainWindow):
         return palette
 
     def update_palette_from_selected_color(self):
-        if not self.selected_rgb:
-            return
+        try:
+            if not self.selected_rgb:
+                return
 
-        preset_name = self.ui.Preset_combobox.currentText()
-        self.generated_palette = self.generate_palette(self.selected_rgb, preset_name)
+            preset_name = self.ui.Preset_combobox.currentText()
+            self.generated_palette = self.generate_palette(self.selected_rgb, preset_name)
 
-        for i, hex_color in enumerate(self.generated_palette):
-            self.ui.palette_boxes[i].setStyleSheet(
-                f"background-color: {hex_color}; border: 1px solid black;"
+            for i, hex_color in enumerate(self.generated_palette):
+                self.ui.palette_boxes[i].setStyleSheet(
+                    f"background-color: {hex_color}; border: 1px solid black;"
+                )
+                self.ui.palette_labels[i].setText(f"HEX: {hex_color}")
+
+            if self.popout:
+                self.popout.update_palette(self.generated_palette)
+
+        except Exception as e:
+            logging.exception("Error while updating palette")
+            QMessageBox.critical(
+                self,
+                "Palette Error",
+                f"An error occurred while generating the palette:\n{e}"
             )
-            self.ui.palette_labels[i].setText(f"HEX: {hex_color}")
-
-        if self.popout:
-            self.popout.update_palette(self.generated_palette)
 
     def copy_palette_colors(self):
-        if not self.generated_palette:
+        try:
+            if not self.generated_palette:
+                QMessageBox.information(
+                    self,
+                    "No Palette",
+                    "Generate a palette first by selecting a color from an image."
+                )
+                return
+
+            palette_string = ", ".join(self.generated_palette)
+            QApplication.clipboard().setText(palette_string)
+
             QMessageBox.information(
                 self,
-                "No Palette",
-                "Generate a palette first by selecting a color from an image."
+                "Copied",
+                f"Copied palette colors:\n{palette_string}"
             )
-            return
 
-        palette_string = ", ".join(self.generated_palette)
-        QApplication.clipboard().setText(palette_string)
-
-        QMessageBox.information(
-            self,
-            "Copied",
-            f"Copied palette colors:\n{palette_string}"
-        )
+        except Exception as e:
+            logging.exception("Error while copying palette colors")
+            QMessageBox.critical(
+                self,
+                "Copy Error",
+                f"An error occurred while copying palette colors:\n{e}"
+            )
 
 
 if __name__ == "__main__":
+    setup_logger()
+    sys.excepthook = handle_exception
     initialize_database()
 
     app = QApplication(sys.argv)
