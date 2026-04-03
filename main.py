@@ -4,14 +4,14 @@ from colour.models import sRGB_to_XYZ, XYZ_to_Oklab
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout,
-    QMessageBox, QWidget, QGridLayout, QFrame
+    QMessageBox, QWidget, QGridLayout, QFrame, QScrollArea
 )
 from PySide6.QtGui import QPixmap, QImage, QPainter, QCursor, QFont
 from PySide6.QtCore import Qt, QPointF
 from PIL import Image, ImageDraw
 
 from frontend import Ui_interface
-from init_db import initialize_database
+from Init_db import initialize_database
 from db_operations import (
     create_project_session,
     save_palette_result,
@@ -75,10 +75,14 @@ class ZoomableImageLabel(QWidget):
     def paintEvent(self, event):
         if not self.image:
             return
+        # Creates the painter to repaint the image based on changed made
         painter = QPainter(self)
         painter.setRenderHint(QPainter.SmoothPixmapTransform)
+        # shifts the entire canvas so the image can be dragged around
         painter.translate(self._offset)
+        # scales the image around the origin (0,0) of the translated canvas
         painter.scale(self._zoom, self._zoom)
+        # Draw the image at (0,0); translate+scale above position and size it correctly
         painter.drawImage(0, 0, self.image)
 
     def wheelEvent(self, event):
@@ -86,7 +90,9 @@ class ZoomableImageLabel(QWidget):
             return
 
         cursor_pos = QPointF(event.position())
+        # Captures wheel up or wheel down
         delta = event.angleDelta().y()
+        # if wheel up - zoom in, else - zoom out
         factor = self.ZOOM_STEP if delta > 0 else 1.0 / self.ZOOM_STEP
 
         new_zoom = max(self._fit_zoom, min(self.ZOOM_MAX, self._zoom * factor))
@@ -99,7 +105,7 @@ class ZoomableImageLabel(QWidget):
     def mousePressEvent(self, event):
         if not self.image:
             return
-
+        #Right click will reset the image 
         if event.button() == Qt.RightButton:
             self._fit_to_window()
             self.update()
@@ -232,14 +238,90 @@ class PalettePopout(QWidget):
                 self.boxes[i].setStyleSheet(f"background-color: {c}; border: 1px solid black;")
                 self.labels[i].setText(c)
 
+class FAQWindow(QMainWindow):
+    """
+    A simple window that displays FAQ information about the application.
+    """
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("FAQ")
+        self.setFixedSize(600, 500)
+
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QVBoxLayout(central_widget)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(10)
+
+        title = QLabel("Frequently Asked Questions")
+        title.setAlignment(Qt.AlignCenter)
+        title.setFont(QFont("Segoe UI", 18))
+
+        scroll= QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+
+        content= QWidget()
+        content_layout = QVBoxLayout(content)
+
+        description = QLabel(
+    "Q: How do I upload an image?\n"
+    "A: You can go to File > Upload Image or click the Upload Image button\n"
+    "near the bottom left corner of the image preview window.\n\n"
+    
+    "Q: How do I pick colors from my selected image?\n"
+    "A: Toggle the eyedropper on/off by clicking the Eyedropper button near\n"
+    "the bottom right corner of the image preview window. When the Eyedropper\n"
+    "is toggled off, you may drag your selected image around.\n\n"
+    
+    "Q: Help! My selected image is no longer in-frame of the image preview window!\n"
+    "A: Hover your cursor over the image preview window and right-click.\n"
+    "Your selected image should snap back to the center of the frame.\n\n"
+    
+    "Q: How do I zoom in on my selected image?\n"
+    "A: Hover your cursor over the image preview window and use the\n"
+    "mouse scroll wheel to zoom in/out.\n\n"
+    
+    "Q: How do I select a palette preset?\n"
+    "A: Select a preset from the drop-down menu in the upper right of the window.\n\n"
+    
+    "Q: What can I use my generated palette(s) for?\n"
+    "A: Anything! You can pop out the palette to appear always-on-top of other\n"
+    "windows for ease of reference, export the palette as a PNG to reference/\n"
+    "colorpick from in your drawing/editing software, or just copy the HEX codes.\n\n"
+    
+    "Q: Who is PalettePal's target audience?\n"
+    "A: PalettePal was designed primarily for beginner/intermediate digital artists\n"
+    "to assist them with picking harmonious rendering colors. But its use extends\n"
+    "to graphic designers, 3D modelers, UI/web developers, brands, and more!\n\n"
+    
+    "Q: How does PalettePal work?\n"
+    "A: Magic!"
+        )
+        description.setAlignment(Qt.AlignLeft)
+        description.setWordWrap(True)
+        description.setFont(QFont("Segoe UI", 10))
+
+        content_layout.addWidget(description)
+        scroll.setWidget(content)
+
+        layout.addWidget(title)
+        layout.addSpacing(10)
+        layout.addWidget(scroll)
+        
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+          
+
         self.ui = Ui_interface()
         self.ui.setupUi(self)
         self.popout = None
+        self.faq_window = None
         self.ui.pop_out_button.clicked.connect(self.toggle_popout)
 
         self.selected_hex = None
@@ -266,6 +348,8 @@ class MainWindow(QMainWindow):
         self.ui.export_button.clicked.connect(lambda: self.export_palette(self.generated_palette))
         self.ui.action_export_palette.triggered.connect(lambda: self.export_palette(self.generated_palette))
         self.ui.upload_image.triggered.connect(self.open_file_dialog)
+        self.ui.faq.triggered.connect(self.open_faq_window)
+
 
         self.apply_theme()
 
@@ -363,6 +447,15 @@ class MainWindow(QMainWindow):
                 )
             else:
                 QMessageBox.information(self, "Exported", f"Palette saved to:\n{file_path}")
+
+    def open_faq_window(self):
+        """Opens the FAQ window, or brings it to focus if already open."""
+        if self.faq_window is None or not self.faq_window.isVisible():
+            self.faq_window = FAQWindow() 
+        self.faq_window = FAQWindow()
+        self.faq_window.show()
+        self.faq_window.raise_()
+        self.faq_window.activateWindow()
 
     def toggle_eyedropper(self):
         self.eyedropper_enabled = not self.eyedropper_enabled
@@ -529,6 +622,8 @@ class MainWindow(QMainWindow):
             "Copied",
             f"Copied palette colors:\n{palette_string}"
         )
+    
+    
 
 
 if __name__ == "__main__":

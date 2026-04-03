@@ -172,6 +172,7 @@ class Ui_interface(object):
         self.action_export_palette = QAction("Export Palette", MainWindow)
         self.action_toggle_theme = QAction("Toggle Light/Dark Mode", MainWindow)
         self.faq = QAction("FAQ", MainWindow)
+        
 
         self.menufile.addAction(self.upload_image)
         self.menufile.addAction(self.action_export_palette)
