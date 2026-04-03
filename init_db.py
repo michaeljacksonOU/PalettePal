@@ -100,6 +100,27 @@ def initialize_database():
         )
         """)
 
+        preset_rows = [
+            ("Natural", "neutral", "neutral", 0.50, '{"roles":"default"}'),
+            ("Warm", "warm", "cool", 0.75, '{"roles":"default"}'),
+            ("Cool", "cool", "warm", 0.75, '{"roles":"default"}'),
+            ("Moody", "neutral", "cool", 0.60, '{"roles":"default"}'),
+            ("Neon", "warm", "cool", 0.90, '{"roles":"default"}'),
+            ("Pastel", "warm", "neutral", 0.40, '{"roles":"default"}'),
+            ("Anime Cel", "neutral", "neutral", 0.70, '{"roles":"default"}')
+        ]
+
+        cursor.executemany("""
+        INSERT OR IGNORE INTO PresetDefinition (
+            preset_name,
+            light_temp,
+            shadow_temp,
+            temp_strength,
+            hsv_delta_values
+        )
+        VALUES (?, ?, ?, ?, ?)
+        """, preset_rows)
+
         conn.commit()
         print("Database initialized successfully.")
 
