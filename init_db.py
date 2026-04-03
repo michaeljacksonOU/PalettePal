@@ -121,6 +121,8 @@ def initialize_database():
         VALUES (?, ?, ?, ?, ?)
         """, preset_rows)
 
+        print("Preset definitions seeded.")
+
         conn.commit()
         print("Database initialized successfully.")
 
