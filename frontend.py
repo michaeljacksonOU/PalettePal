@@ -1,5 +1,5 @@
 from PySide6.QtCore import QRect, Qt
-from PySide6.QtGui import QFont, QAction
+from PySide6.QtGui import QFont, QAction,QPixmap
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QFrame,
     QPushButton, QLabel, QComboBox,
@@ -163,8 +163,20 @@ class Ui_interface(object):
 
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setGeometry(QRect(0, 0, 1114, 26))
+        self.menubar.setStyleSheet("QMenuBar { min-height: 40px; }")
 
-        self.menuPalettePal = QMenu("PalettePal", self.menubar)
+        # Logo label instead of QAction
+        self.logo_label = QLabel()
+        self.logo_label.setStyleSheet("background-color: transparent;")
+        logo_pixmap = QPixmap("palettepal.ico").scaled(
+            55, 55,
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation
+        )
+        self.logo_label.setPixmap(logo_pixmap)
+        self.logo_label.setContentsMargins(5, 2, 5, 0)
+        self.menubar.setCornerWidget(self.logo_label, Qt.TopLeftCorner)
+
         self.menufile = QMenu("File", self.menubar)
         self.menuSettings = QMenu("Tools", self.menubar)
 
@@ -179,7 +191,6 @@ class Ui_interface(object):
         self.menuSettings.addAction(self.action_toggle_theme)
         self.menuSettings.addAction(self.faq)
 
-        self.menubar.addMenu(self.menuPalettePal)
         self.menubar.addMenu(self.menufile)
         self.menubar.addMenu(self.menuSettings)
 

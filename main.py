@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout,
     QMessageBox, QWidget, QGridLayout, QFrame, QScrollArea
 )
-from PySide6.QtGui import QImage, QPainter, QCursor, QFont
+from PySide6.QtGui import QImage, QPainter, QCursor, QFont,QIcon
 from PySide6.QtCore import Qt, QPointF
 from PIL import Image, ImageDraw
 
@@ -193,6 +193,7 @@ class PalettePopout(QWidget):
     def __init__(self, dark_mode=False):
         super().__init__()
         self.setWindowTitle("Palette")
+        self.setWindowIcon(QIcon("palettepal.ico"))
         self.setWindowFlags(Qt.Window | Qt.WindowStaysOnTopHint)
         self.resize(350, 400)
 
@@ -275,6 +276,7 @@ class FAQWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("FAQ")
+        self.setWindowIcon(QIcon("palettepal.ico"))
         self.setFixedSize(600, 500)
 
         central_widget = QWidget()
@@ -346,7 +348,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
           
-
+        self.setWindowIcon(QIcon("palettepal.ico"))
         self.ui = Ui_interface()
         self.ui.setupUi(self)
         self.popout = None
