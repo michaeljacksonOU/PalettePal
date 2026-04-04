@@ -1,4 +1,5 @@
 import sys
+import colorsys
 import logging
 import colour
 from colour.models import sRGB_to_XYZ, XYZ_to_Oklab
@@ -12,6 +13,7 @@ from PySide6.QtCore import Qt, QPointF
 from PIL import Image, ImageDraw
 
 from frontend import Ui_interface
+from Init_db import initialize_database
 from logger_config import setup_logger
 from init_db import initialize_database
 from db_operations import (
@@ -626,29 +628,122 @@ class MainWindow(QMainWindow):
             self.clamp(b)
         )
 
+    def rgb_to_hsv(self, r, g, b):
+        r_norm = r / 255.0
+        g_norm = g / 255.0
+        b_norm = b / 255.0
+        h, s, v = colorsys.rgb_to_hsv(r_norm, g_norm, b_norm)
+        return h, s, v
+
+    def hsv_to_rgb(self, h, s, v):
+        h = h % 1.0
+        s = max(0.0, min(1.0, s))
+        v = max(0.0, min(1.0, v))
+
+        r, g, b = colorsys.hsv_to_rgb(h, s, v)
+        return (
+            int(round(r * 255)),
+            int(round(g * 255)),
+            int(round(b * 255))
+        )
+
+    def apply_rule(self, h, s, v, rule):
+        new_h = (h + rule.get("dH", 0.0)) % 1.0
+        new_s = max(0.0, min(1.0, s + rule.get("dS", 0.0)))
+        new_v = max(0.0, min(1.0, v + rule.get("dV", 0.0)))
+
+        return self.hsv_to_rgb(new_h, new_s, new_v)
+
     def generate_palette(self, base_rgb, preset_name):
         r, g, b = base_rgb
+        h, s, v = self.rgb_to_hsv(r, g, b)
 
-        preset_offsets = {
-            "Natural":   [(-90, -90, -90), (-30, -10, -10), (35, 35, 35), (65, 65, 65), (-55, -55, -55), (-110, -110, -110)],
-            "Warm":      [(-80, -60, -40), (20, 0, -10), (45, 20, 0), (70, 35, 10), (-35, -20, -20), (-75, -45, -35)],
-            "Cool":      [(-70, -80, -100), (-20, 0, 15), (10, 30, 45), (25, 50, 70), (-35, -40, -20), (-70, -75, -35)],
-            "Moody":     [(-110, -110, -110), (-55, -45, -45), (20, 20, 20), (40, 35, 35), (-85, -70, -70), (-135, -120, -120)],
-            "Neon":      [(-120, -120, -120), (40, -10, 40), (80, 50, 0), (100, 80, 35), (-40, -20, 10), (-80, -50, 30)],
-            "Pastel":    [(-40, -40, -40), (25, 20, 20), (55, 50, 50), (80, 75, 75), (-20, -20, -20), (-55, -55, -55)],
-            "Anime Cel": [(-100, -100, -100), (-20, -20, -20), (30, 30, 30), (65, 65, 65), (-55, -55, -55), (-125, -125, -125)],
+        presets = {
+            "Natural": {
+                "lineart":    {"dH": 0.02,  "dS": -0.12, "dV": -0.35},
+                "shadow1":    {"dH": -0.03, "dS": -0.06, "dV": -0.25},
+                "shadow2":    {"dH": -0.05, "dS": -0.10, "dV": -0.45},
+                "highlight1": {"dH": 0.02,  "dS":  0.04, "dV":  0.18},
+                "highlight2": {"dH": 0.03,  "dS":  0.08, "dV":  0.30},
+                "accent":     {"mode": "complement", "dS": 0.10, "dV": 0.05}
+            },
+
+            "Warm": {
+                "lineart":    {"dH": 0.03,  "dS": -0.10, "dV": -0.35},
+                "shadow1":    {"dH": -0.05, "dS": -0.05, "dV": -0.28},
+                "shadow2":    {"dH": -0.08, "dS": -0.10, "dV": -0.48},
+                "highlight1": {"dH": 0.04,  "dS":  0.06, "dV":  0.20},
+                "highlight2": {"dH": 0.06,  "dS":  0.10, "dV":  0.32},
+                "accent":     {"mode": "complement", "dS": 0.12, "dV": 0.06}
+            },
+
+            "Cool": {
+                "lineart":    {"dH": -0.03, "dS": -0.10, "dV": -0.35},
+                "shadow1":    {"dH": 0.05,  "dS": -0.05, "dV": -0.28},
+                "shadow2":    {"dH": 0.08,  "dS": -0.10, "dV": -0.48},
+                "highlight1": {"dH": -0.04, "dS":  0.06, "dV":  0.18},
+                "highlight2": {"dH": -0.06, "dS":  0.10, "dV":  0.30},
+                "accent":     {"mode": "complement", "dS": 0.10, "dV": 0.05}
+            },
+
+            "Moody": {
+                "lineart":    {"dH": 0.00,  "dS": -0.20, "dV": -0.45},
+                "shadow1":    {"dH": 0.00,  "dS": -0.15, "dV": -0.38},
+                "shadow2":    {"dH": 0.00,  "dS": -0.25, "dV": -0.60},
+                "highlight1": {"dH": 0.00,  "dS": -0.05, "dV":  0.10},
+                "highlight2": {"dH": 0.00,  "dS":  0.00, "dV":  0.18},
+                "accent":     {"mode": "complement", "dS": 0.05, "dV": 0.00}
+            },
+
+            "Neon": {
+                "lineart":    {"dH": 0.05,  "dS":  0.05, "dV": -0.30},
+                "shadow1":    {"dH": 0.08,  "dS":  0.10, "dV": -0.22},
+                "shadow2":    {"dH": 0.10,  "dS":  0.15, "dV": -0.40},
+                "highlight1": {"dH": 0.05,  "dS":  0.15, "dV":  0.24},
+                "highlight2": {"dH": 0.08,  "dS":  0.22, "dV":  0.38},
+                "accent":     {"mode": "complement", "dS": 0.20, "dV": 0.10}
+            },
+
+            "Pastel": {
+                "lineart":    {"dH": 0.02,  "dS": -0.25, "dV": -0.22},
+                "shadow1":    {"dH": 0.00,  "dS": -0.20, "dV": -0.18},
+                "shadow2":    {"dH": 0.00,  "dS": -0.28, "dV": -0.30},
+                "highlight1": {"dH": 0.00,  "dS": -0.08, "dV":  0.16},
+                "highlight2": {"dH": 0.00,  "dS": -0.04, "dV":  0.24},
+                "accent":     {"mode": "complement", "dS": -0.05, "dV": 0.10}
+            },
+
+            "Anime Cel": {
+                "lineart":    {"dH": 0.00,  "dS": -0.08, "dV": -0.45},
+                "shadow1":    {"dH": 0.00,  "dS":  0.05, "dV": -0.35},
+                "shadow2":    {"dH": 0.00,  "dS":  0.08, "dV": -0.55},
+                "highlight1": {"dH": 0.00,  "dS":  0.04, "dV":  0.18},
+                "highlight2": {"dH": 0.00,  "dS":  0.08, "dV":  0.30},
+                "accent":     {"mode": "complement", "dS": 0.10, "dV": 0.05}
+            }
         }
 
-        offsets = preset_offsets.get(preset_name, preset_offsets["Natural"])
-        palette = []
+        preset = presets.get(preset_name, presets["Natural"])
 
-        for dr, dg, db in offsets:
-            new_rgb = (
-                self.clamp(r + dr),
-                self.clamp(g + dg),
-                self.clamp(b + db)
-            )
-            palette.append(self.rgb_to_hex(new_rgb))
+        lineart    = self.apply_rule(h, s, v, preset["lineart"])
+        shadow1    = self.apply_rule(h, s, v, preset["shadow1"])
+        shadow2    = self.apply_rule(h, s, v, preset["shadow2"])
+        highlight1 = self.apply_rule(h, s, v, preset["highlight1"])
+        highlight2 = self.apply_rule(h, s, v, preset["highlight2"])
+
+        accent_h = (h + 0.5) % 1.0
+        accent_s = max(0, min(1, s * (1 + preset["accent"]["dS"])))
+        accent_v = max(0, min(1, v * (1 + preset["accent"]["dV"])))
+        accent = self.hsv_to_rgb(accent_h, accent_s, accent_v)
+
+        palette = [
+            self.rgb_to_hex(lineart),
+            self.rgb_to_hex(accent),
+            self.rgb_to_hex(highlight1),
+            self.rgb_to_hex(highlight2),
+            self.rgb_to_hex(shadow1),
+            self.rgb_to_hex(shadow2),
+        ]
 
         return palette
 
