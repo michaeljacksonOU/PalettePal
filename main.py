@@ -523,6 +523,8 @@ class MainWindow(QMainWindow):
     def toggle_eyedropper(self):
         self.eyedropper_enabled = not self.eyedropper_enabled
 
+        
+
         if self.eyedropper_enabled:
             self.ui.eyedropper_btn.setText("EyeDropper : On")
             self.ui.eyedropper_btn.setToolTip("Use your cursor to select a color inside of an uploaded image")
@@ -568,6 +570,13 @@ class MainWindow(QMainWindow):
                     background-color: #353535;
                     border: none;
                 }
+                 QToolTip {
+                    background-color: #f4f4f4;
+                    color: #222;
+                    border: 1px solid #aaa;
+                    padding: 6px;
+                    border-radius: 3px;
+                }
             """)
         else:
             self.setStyleSheet("""
@@ -601,6 +610,14 @@ class MainWindow(QMainWindow):
                 QFrame {
                     background-color: white;
                     border: none;
+                }
+                QToolTip {
+                    background-color: #2b2b2b;
+                    color: #ffffff;
+                    border: none;
+                    padding: 5px 10px;
+                    border-radius: 2px;
+                    font-size: 12px;
                 }
             """)
         if self.popout:
@@ -711,6 +728,15 @@ if __name__ == "__main__":
     initialize_database()
 
     app = QApplication(sys.argv)
+    app.setStyleSheet("""
+    QToolTip {
+    background-color: #f4f4f4;
+    color: #222;
+    border: 1px solid #aaa;
+    padding: 6px;
+    border-radius: 3px;
+}
+""")
     app.setFont(QFont("Segoe UI", 10))
 
     window = MainWindow()
