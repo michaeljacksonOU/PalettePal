@@ -13,7 +13,7 @@ from PySide6.QtCore import Qt, QPointF
 from PIL import Image, ImageDraw
 
 from frontend import Ui_interface
-from Init_db import initialize_database
+from init_db import initialize_database
 from logger_config import setup_logger
 from init_db import initialize_database
 from db_operations import (
