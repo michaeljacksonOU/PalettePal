@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QGridLayout, QMenuBar, QMenu, QStatusBar,
     QHBoxLayout, QVBoxLayout
 )
+from widgets import ClickableLabel
 
 class Ui_interface(object):
     def setupUi(self, MainWindow):
@@ -53,7 +54,7 @@ class Ui_interface(object):
         self.Selected_color_frame.setFrameShape(QFrame.Box)
         self.Selected_color_frame.setFixedSize(120, 80)
 
-        self.hex_label = QLabel("HEX: None")
+        self.hex_label = ClickableLabel("HEX: None")
         self.hex_label.setAlignment(Qt.AlignCenter)
 
         self.Selected_color_frame_2_layout.addWidget(self.title)
@@ -132,7 +133,7 @@ class Ui_interface(object):
             box.setFixedSize(130, 80)
             box.setFrameShape(QFrame.NoFrame)
 
-            hex_label = QLabel("HEX:")
+            hex_label = ClickableLabel("HEX:")
             hex_label.setAlignment(Qt.AlignCenter)
             hex_label.setFont(font)
             hex_label.setStyleSheet("border: none;")

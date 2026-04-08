@@ -3,13 +3,14 @@ import colorsys
 import logging
 import colour
 from colour.models import sRGB_to_XYZ, XYZ_to_Oklab
+from widgets import ClickableLabel
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout,
     QMessageBox, QWidget, QGridLayout, QFrame, QScrollArea
 )
 from PySide6.QtGui import QImage, QPainter, QCursor, QFont,QIcon
-from PySide6.QtCore import Qt, QPointF
+from PySide6.QtCore import Qt, QPointF,QTimer
 from PIL import Image, ImageDraw
 
 from frontend import Ui_interface
@@ -155,7 +156,6 @@ class ZoomableImageLabel(QWidget):
         if self._drag_start is not None:
             delta = event.position() - self._drag_start
             self._offset = self._drag_orig + delta
-            self.update()
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -342,6 +342,8 @@ class FAQWindow(QMainWindow):
         layout.addWidget(title)
         layout.addSpacing(10)
         layout.addWidget(scroll)
+
+
         
 
 
