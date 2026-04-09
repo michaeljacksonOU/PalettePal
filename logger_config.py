@@ -1,11 +1,19 @@
 import logging
-from pathlib import Path
-
-LOG_PATH = Path(__file__).resolve().parent / "palettepal.log"
+import os
+import sys
 
 def setup_logger():
-  logging.basicConfig(
-    filename=LOG_PATH,
-    level=logging.ERROR,
-    format="%(asctime)s | %(levelname)s | %(message)s"
-  )
+    if getattr(sys, 'frozen', False):
+        # Running as .exe
+        base_path = os.path.dirname(sys.executable)
+    else:
+        # Running in development
+        base_path = os.path.dirname(__file__)
+
+    log_path = os.path.join(base_path, "palettepal.log")
+
+    logging.basicConfig(
+        filename=log_path,
+        level=logging.ERROR,
+        format="%(asctime)s | %(levelname)s | %(message)s"
+    )
