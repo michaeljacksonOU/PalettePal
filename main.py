@@ -156,12 +156,14 @@ class ZoomableImageLabel(QWidget):
         if self._drag_start is not None:
             delta = event.position() - self._drag_start
             self._offset = self._drag_orig + delta
+            self.update()
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self._drag_start = None
             self._drag_orig = None
             self.setCursor(QCursor(Qt.ArrowCursor))
+            self.update()
 
     def _pick_color(self, widget_pos):
         image_x = int((widget_pos.x() - self._offset.x()) / self._zoom)
@@ -318,6 +320,11 @@ class FAQWindow(QMainWindow):
     
     "Q: How do I select a palette preset?\n"
     "A: Select a preset from the drop-down menu in the upper right of the window.\n\n"
+
+    "Q: Can I directly copy HEX values from the interface?\n"
+    "A: Yes! If you hover over any HEX value on the interface and left click your mouse, the HEX value will be copied.\n\n"
+
+
     
     "Q: What can I use my generated palette(s) for?\n"
     "A: Anything! You can pop out the palette to appear always-on-top of other\n"
@@ -384,6 +391,7 @@ class MainWindow(QMainWindow):
         self.ui.action_export_palette.triggered.connect(lambda: self.export_palette(self.generated_palette))
         self.ui.upload_image.triggered.connect(self.open_file_dialog)
         self.ui.faq.triggered.connect(self.open_faq_window)
+        self.ui.clear_btn.clicked.connect(self.clear_board)
 
 
         self.apply_theme()
@@ -817,6 +825,54 @@ class MainWindow(QMainWindow):
                 "Copy Error",
                 f"An error occurred while copying palette colors:\n{e}"
             )
+    def clear_board(self):
+        """
+        Resets the entire application back to its default state.
+        Clears the image, selected color, and generated palette.
+        """
+        # Clear the image
+        self.image_label.image = None
+        self.image_label.update()
+
+        # Reset selected color variables
+        self.selected_hex   = None
+        self.selected_rgb   = None
+        self.selected_oklab = None
+
+        # Reset session variables
+        self.current_image_path = None
+        self.current_session_id = None
+
+        # Clear the generated palette
+        self.generated_palette = []
+
+        # Reset the selected color display
+        self.ui.hex_label.setText("HEX")
+        self.ui.Selected_color_frame.setStyleSheet(
+        "background-color: none; border: none;"
+    )
+
+        # Reset all palette boxes and labels back to default
+        for i in range(len(self.ui.palette_boxes)):
+            self.ui.palette_boxes[i].setStyleSheet(
+                "background-color: none; border: none;"
+            )
+            self.ui.palette_labels[i].setText("HEX:")
+
+        # Reset the popout if it's open
+        if self.popout and self.popout.isVisible():
+            self.popout.hide()
+
+        # Reset eyedropper to on
+        self.eyedropper_enabled = True
+        self.ui.eyedropper_btn.setText("EyeDropper : On")
+
+        # Reset zoom and pan on the image label
+        self.image_label._zoom     = 1.0
+        self.image_label._fit_zoom = 1.0
+        self.image_label._offset   = QPointF(0, 0)
+
+        self.statusBar().showMessage("Board cleared.", 3000)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,36 @@
+2026-04-13 17:35:23,593 | CRITICAL | Unhandled exception
+Traceback (most recent call last):
+  File "c:\Users\mikej\OneDrive\Documents\School\csi 4999\main.py", line 889, in <module>
+    window = MainWindow()
+             ^^^^^^^^^^^^
+  File "c:\Users\mikej\OneDrive\Documents\School\csi 4999\main.py", line 388, in __init__
+    self.ui.clear_btn.clicked.connect(self.clear_boardy)
+                                      ^^^^^^^^^^^^^^^^^
+AttributeError: 'MainWindow' object has no attribute 'clear_boardy'. Did you mean: 'clear_board'?
+2026-04-13 17:35:42,403 | CRITICAL | Unhandled exception
+Traceback (most recent call last):
+  File "c:\Users\mikej\OneDrive\Documents\School\csi 4999\main.py", line 889, in <module>
+    window = MainWindow()
+             ^^^^^^^^^^^^
+  File "c:\Users\mikej\OneDrive\Documents\School\csi 4999\main.py", line 388, in __init__
+    self.ui.clear_btn.clicked.connect(self.clear_boardy)
+                                      ^^^^^^^^^^^^^^^^^
+AttributeError: 'MainWindow' object has no attribute 'clear_boardy'. Did you mean: 'clear_board'?
+2026-04-13 17:36:49,672 | CRITICAL | Unhandled exception
+Traceback (most recent call last):
+  File "c:\Users\mikej\OneDrive\Documents\School\csi 4999\main.py", line 889, in <module>
+    window = MainWindow()
+             ^^^^^^^^^^^^
+  File "c:\Users\mikej\OneDrive\Documents\School\csi 4999\main.py", line 388, in __init__
+    self.ui.clear_btn.clicked.connect(self.clear_boardy)
+                                      ^^^^^^^^^^^^^^^^^
+AttributeError: 'MainWindow' object has no attribute 'clear_boardy'. Did you mean: 'clear_board'?
+2026-04-13 17:37:48,058 | CRITICAL | Unhandled exception
+Traceback (most recent call last):
+  File "c:\Users\mikej\OneDrive\Documents\School\csi 4999\main.py", line 889, in <module>
+    window = MainWindow()
+             ^^^^^^^^^^^^
+  File "c:\Users\mikej\OneDrive\Documents\School\csi 4999\main.py", line 388, in __init__
+    self.ui.clear_btn.clicked.connect(self.clear_boardy)
+                                      ^^^^^^^^^^^^^^^^^
+AttributeError: 'MainWindow' object has no attribute 'clear_boardy'. Did you mean: 'clear_board'?

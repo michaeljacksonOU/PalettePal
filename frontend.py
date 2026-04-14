@@ -32,12 +32,17 @@ class Ui_interface(object):
         self.upload_btn = QPushButton("Upload Image")
         self.upload_btn.setToolTip("Upload an image to interact with.")
 
+        self.clear_btn = QPushButton("Reset Board")
+        self.clear_btn.setToolTip("CLick this button to reset the board back to default")
+
         self.eyedropper_btn = QPushButton("EyeDropper : On")
         self.eyedropper_btn.setToolTip("Use your cursor to select a color inside of an uploaded image")
 
         self.button_layout.addWidget(self.upload_btn)
         self.button_layout.addStretch()
         self.button_layout.addWidget(self.eyedropper_btn)
+        self.button_layout.addStretch()
+        self.button_layout.addWidget(self.clear_btn)
 
         self.Selected_color_frame_2 = QFrame()
         self.Selected_color_frame_2.setFrameShape(QFrame.NoFrame)
