@@ -9,14 +9,13 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout,
     QMessageBox, QWidget, QGridLayout, QFrame, QScrollArea
 )
-from PySide6.QtGui import QImage, QPainter, QCursor, QFont,QIcon
-from PySide6.QtCore import Qt, QPointF,QTimer
+from PySide6.QtGui import QImage, QPainter, QCursor, QFont, QIcon
+from PySide6.QtCore import Qt, QPointF
 from PIL import Image, ImageDraw
 
 from frontend import Ui_interface
 from init_db import initialize_database
 from logger_config import setup_logger
-from init_db import initialize_database
 from db_operations import (
     create_project_session,
     save_palette_result,
@@ -99,14 +98,11 @@ class ZoomableImageLabel(QWidget):
     def paintEvent(self, event):
         if not self.image:
             return
-        # Creates the painter to repaint the image based on changed made
+
         painter = QPainter(self)
         painter.setRenderHint(QPainter.SmoothPixmapTransform)
-        # shifts the entire canvas so the image can be dragged around
         painter.translate(self._offset)
-        # scales the image around the origin (0,0) of the translated canvas
         painter.scale(self._zoom, self._zoom)
-        # Draw the image at (0,0); translate+scale above position and size it correctly
         painter.drawImage(0, 0, self.image)
 
     def wheelEvent(self, event):
@@ -114,9 +110,7 @@ class ZoomableImageLabel(QWidget):
             return
 
         cursor_pos = QPointF(event.position())
-        # Captures wheel up or wheel down
         delta = event.angleDelta().y()
-        # if wheel up - zoom in, else - zoom out
         factor = self.ZOOM_STEP if delta > 0 else 1.0 / self.ZOOM_STEP
 
         new_zoom = max(self._fit_zoom, min(self.ZOOM_MAX, self._zoom * factor))
@@ -129,7 +123,8 @@ class ZoomableImageLabel(QWidget):
     def mousePressEvent(self, event):
         if not self.image:
             return
-        #Right click will reset the image 
+
+        # Right click resets the image
         if event.button() == Qt.RightButton:
             self._fit_to_window()
             self.update()
@@ -272,10 +267,8 @@ class PalettePopout(QWidget):
                 self.boxes[i].setStyleSheet(f"background-color: {c}; border: 1px solid black;")
                 self.labels[i].setText(c)
 
+
 class FAQWindow(QMainWindow):
-    """
-    A simple window that displays FAQ information about the application.
-    """
     def __init__(self):
         super().__init__()
 
@@ -293,51 +286,49 @@ class FAQWindow(QMainWindow):
         title.setAlignment(Qt.AlignCenter)
         title.setFont(QFont("Segoe UI", 18))
 
-        scroll= QScrollArea()
+        scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
 
-        content= QWidget()
+        content = QWidget()
         content_layout = QVBoxLayout(content)
 
         description = QLabel(
-    "Q: How do I upload an image?\n"
-    "A: You can go to File > Upload Image or click the Upload Image button\n"
-    "near the bottom left corner of the image preview window.\n\n"
-    
-    "Q: How do I pick colors from my selected image?\n"
-    "A: Toggle the eyedropper on/off by clicking the Eyedropper button near\n"
-    "the bottom right corner of the image preview window. When the Eyedropper\n"
-    "is toggled off, you may drag your selected image around.\n\n"
-    
-    "Q: Help! My selected image is no longer in-frame of the image preview window!\n"
-    "A: Hover your cursor over the image preview window and right-click.\n"
-    "Your selected image should snap back to the center of the frame.\n\n"
-    
-    "Q: How do I zoom in on my selected image?\n"
-    "A: Hover your cursor over the image preview window and use the\n"
-    "mouse scroll wheel to zoom in/out.\n\n"
-    
-    "Q: How do I select a palette preset?\n"
-    "A: Select a preset from the drop-down menu in the upper right of the window.\n\n"
+            "Q: How do I upload an image?\n"
+            "A: You can go to File > Upload Image or click the Upload Image button\n"
+            "near the bottom left corner of the image preview window.\n\n"
 
-    "Q: Can I directly copy HEX values from the interface?\n"
-    "A: Yes! If you hover over any HEX value on the interface and left click your mouse, the HEX value will be copied.\n\n"
+            "Q: How do I pick colors from my selected image?\n"
+            "A: Toggle the eyedropper on/off by clicking the Eyedropper button near\n"
+            "the bottom right corner of the image preview window. When the Eyedropper\n"
+            "is toggled off, you may drag your selected image around.\n\n"
 
+            "Q: Help! My selected image is no longer in-frame of the image preview window!\n"
+            "A: Hover your cursor over the image preview window and right-click.\n"
+            "Your selected image should snap back to the center of the frame.\n\n"
 
-    
-    "Q: What can I use my generated palette(s) for?\n"
-    "A: Anything! You can pop out the palette to appear always-on-top of other\n"
-    "windows for ease of reference, export the palette as a PNG to reference/\n"
-    "colorpick from in your drawing/editing software, or just copy the HEX codes.\n\n"
-    
-    "Q: Who is PalettePal's target audience?\n"
-    "A: PalettePal was designed primarily for beginner/intermediate digital artists\n"
-    "to assist them with picking harmonious rendering colors. But its use extends\n"
-    "to graphic designers, 3D modelers, UI/web developers, brands, and more!\n\n"
-    
-    "Q: How does PalettePal work?\n"
-    "A: Magic!"
+            "Q: How do I zoom in on my selected image?\n"
+            "A: Hover your cursor over the image preview window and use the\n"
+            "mouse scroll wheel to zoom in/out.\n\n"
+
+            "Q: How do I select a palette preset?\n"
+            "A: Select a preset from the drop-down menu in the upper right of the window.\n\n"
+
+            "Q: Can I directly copy HEX values from the interface?\n"
+            "A: Yes! If you hover over any HEX value on the interface and left click your mouse, the HEX value will be copied.\n\n"
+
+            "Q: What can I use my generated palette(s) for?\n"
+            "A: Anything! You can pop out the palette to appear always-on-top of other\n"
+            "windows for ease of reference, export the palette as a PNG to reference/\n"
+            "colorpick from in your drawing/editing software, or just copy the HEX codes.\n\n"
+
+            "Q: Who is PalettePal's target audience?\n"
+            "A: PalettePal was designed primarily for beginner/intermediate digital artists\n"
+            "to assist them with picking harmonious rendering colors. But its use extends\n"
+            "to graphic designers, 3D modelers, UI/web developers, brands, and more!\n\n"
+
+            "Q: How does PalettePal work?\n"
+            "A: Magic!"
         )
         description.setAlignment(Qt.AlignLeft)
         description.setWordWrap(True)
@@ -351,20 +342,16 @@ class FAQWindow(QMainWindow):
         layout.addWidget(scroll)
 
 
-        
-
-
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-          
         self.setWindowIcon(QIcon("palettepal.ico"))
         self.ui = Ui_interface()
         self.ui.setupUi(self)
+
         self.popout = None
         self.faq_window = None
-        self.ui.pop_out_button.clicked.connect(self.toggle_popout)
 
         self.selected_hex = None
         self.selected_rgb = None
@@ -384,6 +371,7 @@ class MainWindow(QMainWindow):
 
         self.ui.upload_btn.clicked.connect(self.open_file_dialog)
         self.ui.copy_button.clicked.connect(self.copy_palette_colors)
+        self.ui.pop_out_button.clicked.connect(self.toggle_popout)
         self.ui.Preset_combobox.currentIndexChanged.connect(self.update_palette_from_selected_color)
         self.ui.eyedropper_btn.clicked.connect(self.toggle_eyedropper)
         self.ui.action_toggle_theme.triggered.connect(self.toggle_theme)
@@ -392,7 +380,6 @@ class MainWindow(QMainWindow):
         self.ui.upload_image.triggered.connect(self.open_file_dialog)
         self.ui.faq.triggered.connect(self.open_faq_window)
         self.ui.clear_btn.clicked.connect(self.clear_board)
-
 
         self.apply_theme()
 
@@ -524,18 +511,14 @@ class MainWindow(QMainWindow):
             )
 
     def open_faq_window(self):
-        """Opens the FAQ window, or brings it to focus if already open."""
         if self.faq_window is None or not self.faq_window.isVisible():
-            self.faq_window = FAQWindow() 
-        self.faq_window = FAQWindow()
+            self.faq_window = FAQWindow()
         self.faq_window.show()
         self.faq_window.raise_()
         self.faq_window.activateWindow()
 
     def toggle_eyedropper(self):
         self.eyedropper_enabled = not self.eyedropper_enabled
-
-        
 
         if self.eyedropper_enabled:
             self.ui.eyedropper_btn.setText("EyeDropper : On")
@@ -582,7 +565,7 @@ class MainWindow(QMainWindow):
                     background-color: #353535;
                     border: none;
                 }
-                 QToolTip {
+                QToolTip {
                     background-color: #f4f4f4;
                     color: #222;
                     border: 1px solid #aaa;
@@ -674,10 +657,33 @@ class MainWindow(QMainWindow):
             int(round(b * 255))
         )
 
-    def apply_rule(self, h, s, v, rule):
+    def apply_rule(self, h, s, v, rule, role=None):
         new_h = (h + rule.get("dH", 0.0)) % 1.0
         new_s = max(0.0, min(1.0, s + rule.get("dS", 0.0)))
         new_v = max(0.0, min(1.0, v + rule.get("dV", 0.0)))
+
+        if role and "highlight" in role:
+            new_v = max(new_v, min(1.0, v + 0.02))
+            new_s = min(new_s, s)
+
+        # Protect light colors from turning muddy when darkened
+
+        if role and "shadow" in role and s > 0.4:
+            new_s = max(new_s, s + 0.05)
+
+        if v > 0.75 and new_v < v:
+            new_s = max(new_s, min(1.0, s + 0.08))
+
+        # Extra protection for already saturated colors so they do not dull out
+        if s > 0.55 and new_v < v:
+            new_s = max(new_s, s)
+
+        # Hard guards so the role behaves correctly
+        if role and "highlight" in role:
+            new_v = max(new_v, min(1.0, v + 0.02))
+
+        if role and "shadow" in role:
+            new_v = min(new_v, max(0.0, v - 0.02))
 
         return self.hsv_to_rgb(new_h, new_s, new_v)
 
@@ -687,80 +693,86 @@ class MainWindow(QMainWindow):
 
         presets = {
             "Natural": {
-                "lineart":    {"dH": 0.02,  "dS": -0.12, "dV": -0.35},
-                "shadow1":    {"dH": -0.03, "dS": -0.06, "dV": -0.25},
-                "shadow2":    {"dH": -0.05, "dS": -0.10, "dV": -0.45},
-                "highlight1": {"dH": 0.02,  "dS":  0.04, "dV":  0.18},
-                "highlight2": {"dH": 0.03,  "dS":  0.08, "dV":  0.30},
-                "accent":     {"mode": "complement", "dS": 0.10, "dV": 0.05}
+                "lineart":    {"dH": 0.00,  "dS": -0.08, "dV": -0.35},
+                "shadow1":    {"dH": -0.01, "dS":  0.02, "dV": -0.18},
+                "shadow2":    {"dH": -0.02, "dS":  0.04, "dV": -0.30},
+                "highlight1": {"dH": 0.00,  "dS": -0.20, "dV":  0.28},
+                "highlight2": {"dH": 0.00,  "dS": -0.10, "dV":  0.14},
+                "accent":     {"dH": 0.08,  "dS": 0.04,  "dV": 0.04}
             },
 
             "Warm": {
-                "lineart":    {"dH": 0.03,  "dS": -0.10, "dV": -0.35},
-                "shadow1":    {"dH": -0.05, "dS": -0.05, "dV": -0.28},
-                "shadow2":    {"dH": -0.08, "dS": -0.10, "dV": -0.48},
-                "highlight1": {"dH": 0.04,  "dS":  0.06, "dV":  0.20},
-                "highlight2": {"dH": 0.06,  "dS":  0.10, "dV":  0.32},
-                "accent":     {"mode": "complement", "dS": 0.12, "dV": 0.06}
+                "lineart":    {"dH": 0.01,  "dS": -0.06, "dV": -0.34},
+                "shadow1":    {"dH": -0.02, "dS":  0.03, "dV": -0.20},
+                "shadow2":    {"dH": -0.03, "dS":  0.05, "dV": -0.32},
+                "highlight1": {"dH": 0.01,  "dS": -0.18, "dV":  0.28},
+                "highlight2": {"dH": 0.01,  "dS": -0.08, "dV":  0.14},
+                "accent":     {"dH": 0.10,  "dS": 0.06,  "dV": 0.05}
             },
 
             "Cool": {
-                "lineart":    {"dH": -0.03, "dS": -0.10, "dV": -0.35},
-                "shadow1":    {"dH": 0.05,  "dS": -0.05, "dV": -0.28},
-                "shadow2":    {"dH": 0.08,  "dS": -0.10, "dV": -0.48},
-                "highlight1": {"dH": -0.04, "dS":  0.06, "dV":  0.18},
-                "highlight2": {"dH": -0.06, "dS":  0.10, "dV":  0.30},
-                "accent":     {"mode": "complement", "dS": 0.10, "dV": 0.05}
+                "lineart":    {"dH": -0.01, "dS": -0.06, "dV": -0.34},
+                "shadow1":    {"dH": 0.02,  "dS":  0.03, "dV": -0.20},
+                "shadow2":    {"dH": 0.03,  "dS":  0.05, "dV": -0.32},
+                "highlight1": {"dH": -0.01, "dS": -0.18, "dV":  0.28},
+                "highlight2": {"dH": -0.01, "dS": -0.08, "dV":  0.14},
+                "accent":     {"dH": -0.10, "dS": 0.06,  "dV": 0.05}
             },
 
             "Moody": {
-                "lineart":    {"dH": 0.00,  "dS": -0.20, "dV": -0.45},
-                "shadow1":    {"dH": 0.00,  "dS": -0.15, "dV": -0.38},
-                "shadow2":    {"dH": 0.00,  "dS": -0.25, "dV": -0.60},
-                "highlight1": {"dH": 0.00,  "dS": -0.05, "dV":  0.10},
-                "highlight2": {"dH": 0.00,  "dS":  0.00, "dV":  0.18},
-                "accent":     {"mode": "complement", "dS": 0.05, "dV": 0.00}
+                "lineart":    {"dH": 0.00,  "dS": -0.05, "dV": -0.42},
+                "shadow1":    {"dH": 0.01,  "dS":  0.03, "dV": -0.28},
+                "shadow2":    {"dH": 0.02,  "dS":  0.05, "dV": -0.42},
+                "highlight1": {"dH": 0.00,  "dS": -0.22, "dV":  0.22},
+                "highlight2": {"dH": 0.00,  "dS": -0.10, "dV":  0.10},
+                "accent":     {"dH": 0.18,  "dS": 0.02,  "dV": 0.00}
             },
 
             "Neon": {
-                "lineart":    {"dH": 0.05,  "dS":  0.05, "dV": -0.30},
-                "shadow1":    {"dH": 0.08,  "dS":  0.10, "dV": -0.22},
-                "shadow2":    {"dH": 0.10,  "dS":  0.15, "dV": -0.40},
-                "highlight1": {"dH": 0.05,  "dS":  0.15, "dV":  0.24},
-                "highlight2": {"dH": 0.08,  "dS":  0.22, "dV":  0.38},
-                "accent":     {"mode": "complement", "dS": 0.20, "dV": 0.10}
+                "lineart":    {"dH": -0.03, "dS":  0.28, "dV": -0.32},
+                "shadow1":    {"dH": -0.04, "dS":  0.25, "dV": -0.10},
+                "shadow2":    {"dH": -0.08, "dS":  0.35, "dV": -0.22},
+                "highlight1": {"dH": 0.00,  "dS": -0.12, "dV":  0.30},
+                "highlight2": {"dH": 0.00,  "dS": -0.04, "dV":  0.16},
+                "accent":     {"dH": 0.25,  "dS": 0.30,  "dV": 0.12}
             },
 
             "Pastel": {
-                "lineart":    {"dH": 0.02,  "dS": -0.25, "dV": -0.22},
-                "shadow1":    {"dH": 0.00,  "dS": -0.20, "dV": -0.18},
-                "shadow2":    {"dH": 0.00,  "dS": -0.28, "dV": -0.30},
-                "highlight1": {"dH": 0.00,  "dS": -0.08, "dV":  0.16},
-                "highlight2": {"dH": 0.00,  "dS": -0.04, "dV":  0.24},
-                "accent":     {"mode": "complement", "dS": -0.05, "dV": 0.10}
+                "lineart":    {"dH": 0.00,  "dS": -0.12, "dV": -0.20},
+                "shadow1":    {"dH": -0.01, "dS": -0.04, "dV": -0.12},
+                "shadow2":    {"dH": -0.02, "dS":  0.00, "dV": -0.20},
+                "highlight1": {"dH": 0.00,  "dS": -0.20, "dV":  0.30},
+                "highlight2": {"dH": 0.00,  "dS": -0.10, "dV":  0.16},
+                "accent":     {"dH": 0.10,  "dS": -0.02, "dV": 0.06}
             },
 
             "Anime Cel": {
-                "lineart":    {"dH": 0.00,  "dS": -0.08, "dV": -0.45},
-                "shadow1":    {"dH": 0.00,  "dS":  0.05, "dV": -0.35},
-                "shadow2":    {"dH": 0.00,  "dS":  0.08, "dV": -0.55},
-                "highlight1": {"dH": 0.00,  "dS":  0.04, "dV":  0.18},
-                "highlight2": {"dH": 0.00,  "dS":  0.08, "dV":  0.30},
-                "accent":     {"mode": "complement", "dS": 0.10, "dV": 0.05}
+                "lineart":    {"dH": -0.01, "dS":  0.12, "dV": -0.42},
+                "shadow1":    {"dH": -0.02, "dS":  0.10, "dV": -0.22},
+                "shadow2":    {"dH": -0.04, "dS":  0.16, "dV": -0.36},
+                "highlight1": {"dH": 0.00,  "dS": -0.14, "dV":  0.26},
+                "highlight2": {"dH": 0.00,  "dS": -0.06, "dV":  0.14},
+                "accent":     {"dH": 0.15,  "dS": 0.14, "dV":  0.06}
             }
         }
 
         preset = presets.get(preset_name, presets["Natural"])
 
-        lineart    = self.apply_rule(h, s, v, preset["lineart"])
-        shadow1    = self.apply_rule(h, s, v, preset["shadow1"])
-        shadow2    = self.apply_rule(h, s, v, preset["shadow2"])
-        highlight1 = self.apply_rule(h, s, v, preset["highlight1"])
-        highlight2 = self.apply_rule(h, s, v, preset["highlight2"])
+        lineart = self.apply_rule(h, s, v, preset["lineart"], "lineart")
+        shadow1 = self.apply_rule(h, s, v, preset["shadow1"], "shadow1")
+        shadow2 = self.apply_rule(h, s, v, preset["shadow2"], "shadow2")
+        highlight1 = self.apply_rule(h, s, v, preset["highlight1"], "highlight1")
+        highlight2 = self.apply_rule(h, s, v, preset["highlight2"], "highlight2")
 
-        accent_h = (h + 0.5) % 1.0
-        accent_s = max(0, min(1, s * (1 + preset["accent"]["dS"])))
-        accent_v = max(0, min(1, v * (1 + preset["accent"]["dV"])))
+        accent_rule = preset["accent"]
+        accent_h = (h + accent_rule.get("dH", 0.0)) % 1.0
+        accent_s = max(0.0, min(1.0, s + accent_rule.get("dS", 0.0)))
+        accent_v = max(0.0, min(1.0, v + accent_rule.get("dV", 0.0)))
+
+        # Accent should not accidentally be darker than the base in bright presets
+        if preset_name in {"Neon", "Pastel"}:
+            accent_v = max(accent_v, min(1.0, v + 0.02))
+
         accent = self.hsv_to_rgb(accent_h, accent_s, accent_v)
 
         palette = [
@@ -825,52 +837,43 @@ class MainWindow(QMainWindow):
                 "Copy Error",
                 f"An error occurred while copying palette colors:\n{e}"
             )
+
     def clear_board(self):
-        """
-        Resets the entire application back to its default state.
-        Clears the image, selected color, and generated palette.
-        """
-        # Clear the image
         self.image_label.image = None
         self.image_label.update()
 
-        # Reset selected color variables
-        self.selected_hex   = None
-        self.selected_rgb   = None
+        self.selected_hex = None
+        self.selected_rgb = None
         self.selected_oklab = None
 
-        # Reset session variables
         self.current_image_path = None
         self.current_session_id = None
 
-        # Clear the generated palette
         self.generated_palette = []
 
-        # Reset the selected color display
         self.ui.hex_label.setText("HEX")
         self.ui.Selected_color_frame.setStyleSheet(
-        "background-color: none; border: none;"
-    )
+            "background-color: none; border: none;"
+        )
 
-        # Reset all palette boxes and labels back to default
         for i in range(len(self.ui.palette_boxes)):
             self.ui.palette_boxes[i].setStyleSheet(
                 "background-color: none; border: none;"
             )
             self.ui.palette_labels[i].setText("HEX:")
 
-        # Reset the popout if it's open
         if self.popout and self.popout.isVisible():
             self.popout.hide()
 
-        # Reset eyedropper to on
         self.eyedropper_enabled = True
         self.ui.eyedropper_btn.setText("EyeDropper : On")
+        self.ui.eyedropper_btn.setToolTip("Use your cursor to select a color inside of an uploaded image")
 
-        # Reset zoom and pan on the image label
-        self.image_label._zoom     = 1.0
+        self.image_label._zoom = 1.0
         self.image_label._fit_zoom = 1.0
-        self.image_label._offset   = QPointF(0, 0)
+        self.image_label._offset = QPointF(0, 0)
+        self.image_label._drag_start = None
+        self.image_label._drag_orig = None
 
         self.statusBar().showMessage("Board cleared.", 3000)
 
@@ -883,13 +886,13 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setStyleSheet("""
     QToolTip {
-    background-color: #f4f4f4;
-    color: #222;
-    border: 1px solid #aaa;
-    padding: 6px;
-    border-radius: 3px;
-}
-""")
+        background-color: #f4f4f4;
+        color: #222;
+        border: 1px solid #aaa;
+        padding: 6px;
+        border-radius: 3px;
+    }
+    """)
     app.setFont(QFont("Segoe UI", 10))
 
     window = MainWindow()
