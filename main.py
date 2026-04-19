@@ -48,6 +48,7 @@ class ZoomableImageLabel(QWidget):
         self._drag_start = None
         self._drag_orig = None
         self.setMouseTracking(True)
+        self.ui.save_button.clicked.connect(self.save_palette)
 
     def set_image(self, path):
         try:
