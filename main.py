@@ -838,19 +838,20 @@ class MainWindow(QMainWindow):
                 "Copy Error",
                 f"An error occurred while copying palette colors:\n{e}"
             )
+            raise
     def save_palette(self):
-    try:
-        if not self.generated_palette:
-            QMessageBox.information(self, "No Palette", "Generate a palette first.")
-            return
+        try:
+            if not self.generated_palette:
+                QMessageBox.information(self, "No Palette", "Generate a palette first.")
+                return
 
-        if not self.current_session_id:
-            QMessageBox.information(self, "No Session", "Upload an image first.")
-            return
+            if not self.current_session_id:
+                QMessageBox.information(self, "No Session", "Upload an image first.")
+                return
 
-        if not self.selected_hex:
-            QMessageBox.information(self, "No Color Selected", "Select a color from the image first.")
-            return
+            if not self.selected_hex:
+                QMessageBox.information(self, "No Color Selected", "Select a color from the image first.")
+                return
 
         preset_name = self.ui.Preset_combobox.currentText()
         colors = self.generated_palette  # [lineart, accent, hl1, hl2, sh1, sh2]
