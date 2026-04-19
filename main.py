@@ -48,7 +48,6 @@ class ZoomableImageLabel(QWidget):
         self._drag_start = None
         self._drag_orig = None
         self.setMouseTracking(True)
-        self.ui.save_button.clicked.connect(self.save_palette)
 
     def set_image(self, path):
         try:
@@ -125,7 +124,6 @@ class ZoomableImageLabel(QWidget):
         if not self.image:
             return
 
-        # Right click resets the image
         if event.button() == Qt.RightButton:
             self._fit_to_window()
             self.update()
@@ -372,6 +370,7 @@ class MainWindow(QMainWindow):
 
         self.ui.upload_btn.clicked.connect(self.open_file_dialog)
         self.ui.copy_button.clicked.connect(self.copy_palette_colors)
+        self.ui.save_button.clicked.connect(self.save_palette)
         self.ui.pop_out_button.clicked.connect(self.toggle_popout)
         self.ui.Preset_combobox.currentIndexChanged.connect(self.update_palette_from_selected_color)
         self.ui.eyedropper_btn.clicked.connect(self.toggle_eyedropper)
@@ -667,19 +666,15 @@ class MainWindow(QMainWindow):
             new_v = max(new_v, min(1.0, v + 0.02))
             new_s = min(new_s, s)
 
-        # Protect light colors from turning muddy when darkened
-
         if role and "shadow" in role and s > 0.4:
             new_s = max(new_s, s + 0.05)
 
         if v > 0.75 and new_v < v:
             new_s = max(new_s, min(1.0, s + 0.08))
 
-        # Extra protection for already saturated colors so they do not dull out
         if s > 0.55 and new_v < v:
             new_s = max(new_s, s)
 
-        # Hard guards so the role behaves correctly
         if role and "highlight" in role:
             new_v = max(new_v, min(1.0, v + 0.02))
 
@@ -701,7 +696,6 @@ class MainWindow(QMainWindow):
                 "highlight2": {"dH": 0.00,  "dS": -0.10, "dV":  0.14},
                 "accent":     {"dH": 0.08,  "dS": 0.04,  "dV": 0.04}
             },
-
             "Warm": {
                 "lineart":    {"dH": 0.01,  "dS": -0.06, "dV": -0.34},
                 "shadow1":    {"dH": -0.02, "dS":  0.03, "dV": -0.20},
@@ -710,7 +704,6 @@ class MainWindow(QMainWindow):
                 "highlight2": {"dH": 0.01,  "dS": -0.08, "dV":  0.14},
                 "accent":     {"dH": 0.10,  "dS": 0.06,  "dV": 0.05}
             },
-
             "Cool": {
                 "lineart":    {"dH": -0.01, "dS": -0.06, "dV": -0.34},
                 "shadow1":    {"dH": 0.02,  "dS":  0.03, "dV": -0.20},
@@ -719,7 +712,6 @@ class MainWindow(QMainWindow):
                 "highlight2": {"dH": -0.01, "dS": -0.08, "dV":  0.14},
                 "accent":     {"dH": -0.10, "dS": 0.06,  "dV": 0.05}
             },
-
             "Moody": {
                 "lineart":    {"dH": 0.00,  "dS": -0.05, "dV": -0.42},
                 "shadow1":    {"dH": 0.01,  "dS":  0.03, "dV": -0.28},
@@ -728,7 +720,6 @@ class MainWindow(QMainWindow):
                 "highlight2": {"dH": 0.00,  "dS": -0.10, "dV":  0.10},
                 "accent":     {"dH": 0.18,  "dS": 0.02,  "dV": 0.00}
             },
-
             "Neon": {
                 "lineart":    {"dH": -0.03, "dS":  0.28, "dV": -0.32},
                 "shadow1":    {"dH": -0.04, "dS":  0.25, "dV": -0.10},
@@ -737,7 +728,6 @@ class MainWindow(QMainWindow):
                 "highlight2": {"dH": 0.00,  "dS": -0.04, "dV":  0.16},
                 "accent":     {"dH": 0.25,  "dS": 0.30,  "dV": 0.12}
             },
-
             "Pastel": {
                 "lineart":    {"dH": 0.00,  "dS": -0.12, "dV": -0.20},
                 "shadow1":    {"dH": -0.01, "dS": -0.04, "dV": -0.12},
@@ -746,14 +736,13 @@ class MainWindow(QMainWindow):
                 "highlight2": {"dH": 0.00,  "dS": -0.10, "dV":  0.16},
                 "accent":     {"dH": 0.10,  "dS": -0.02, "dV": 0.06}
             },
-
             "Anime Cel": {
                 "lineart":    {"dH": -0.01, "dS":  0.12, "dV": -0.42},
                 "shadow1":    {"dH": -0.02, "dS":  0.10, "dV": -0.22},
                 "shadow2":    {"dH": -0.04, "dS":  0.16, "dV": -0.36},
                 "highlight1": {"dH": 0.00,  "dS": -0.14, "dV":  0.26},
                 "highlight2": {"dH": 0.00,  "dS": -0.06, "dV":  0.14},
-                "accent":     {"dH": 0.15,  "dS": 0.14, "dV":  0.06}
+                "accent":     {"dH": 0.15,  "dS": 0.14,  "dV": 0.06}
             }
         }
 
@@ -770,7 +759,6 @@ class MainWindow(QMainWindow):
         accent_s = max(0.0, min(1.0, s + accent_rule.get("dS", 0.0)))
         accent_v = max(0.0, min(1.0, v + accent_rule.get("dV", 0.0)))
 
-        # Accent should not accidentally be darker than the base in bright presets
         if preset_name in {"Neon", "Pastel"}:
             accent_v = max(accent_v, min(1.0, v + 0.02))
 
@@ -838,7 +826,6 @@ class MainWindow(QMainWindow):
                 "Copy Error",
                 f"An error occurred while copying palette colors:\n{e}"
             )
-            raise
 
     def save_palette(self):
         try:
@@ -882,10 +869,6 @@ class MainWindow(QMainWindow):
                 "Save Error",
                 f"An error occurred while saving the palette:\n{e}"
             )
-
-    except Exception as e:
-        logging.exception("Error while saving palette")
-        QMessageBox.critical(self, "Save Error", f"An error occurred while saving:\n{e}")
 
     def clear_board(self):
         self.image_label.image = None
