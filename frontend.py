@@ -126,6 +126,7 @@ class Ui_interface(object):
         button_row.addWidget(self.export_button)
         button_row.addStretch()
         button_row.addWidget(self.copy_button)
+        button_row.addWidget(self.save_button)
 
         for i, name in enumerate(frame_names):
             container = QVBoxLayout()
