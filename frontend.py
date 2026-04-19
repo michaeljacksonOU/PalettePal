@@ -116,6 +116,10 @@ class Ui_interface(object):
         self.export_button.setToolTip("Export palette as a PNG")
         self.export_button.setFixedHeight(35)
 
+        self.save_button = QPushButton("Save Palette")
+        self.save_button.setToolTip("Save the current palette to the database")
+        self.save_button.setFixedHeight(35)
+
         button_row = QHBoxLayout()
         button_row.addWidget(self.pop_out_button)
         button_row.addStretch()
