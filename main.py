@@ -831,7 +831,7 @@ class MainWindow(QMainWindow):
                 f"Copied palette colors:\n{palette_string}"
             )
 
-       except Exception as e:
+        except Exception as e:
             logging.exception("Error while copying palette colors")
             QMessageBox.critical(
                 self,
