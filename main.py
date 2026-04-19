@@ -831,7 +831,7 @@ class MainWindow(QMainWindow):
                 f"Copied palette colors:\n{palette_string}"
             )
 
-        except Exception as e:
+       except Exception as e:
             logging.exception("Error while copying palette colors")
             QMessageBox.critical(
                 self,
@@ -839,6 +839,7 @@ class MainWindow(QMainWindow):
                 f"An error occurred while copying palette colors:\n{e}"
             )
             raise
+
     def save_palette(self):
         try:
             if not self.generated_palette:
@@ -853,27 +854,34 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(self, "No Color Selected", "Select a color from the image first.")
                 return
 
-        preset_name = self.ui.Preset_combobox.currentText()
-        colors = self.generated_palette  # [lineart, accent, hl1, hl2, sh1, sh2]
+            preset_name = self.ui.Preset_combobox.currentText()
+            colors = self.generated_palette  # [lineart, accent, hl1, hl2, sh1, sh2]
 
-        result_id = save_palette_result(
-            session_id=self.current_session_id,
-            base_color_hex=self.selected_hex,
-            preset_environment=preset_name,
-            preset_style="Current UI Palette",
-            lineart_hex=colors[0],
-            accent_hex=colors[1],
-            highlight1_hex=colors[2],
-            highlight2_hex=colors[3],
-            shadow1_hex=colors[4],
-            shadow2_hex=colors[5]
-        )
+            result_id = save_palette_result(
+                session_id=self.current_session_id,
+                base_color_hex=self.selected_hex,
+                preset_environment=preset_name,
+                preset_style="Current UI Palette",
+                lineart_hex=colors[0],
+                accent_hex=colors[1],
+                highlight1_hex=colors[2],
+                highlight2_hex=colors[3],
+                shadow1_hex=colors[4],
+                shadow2_hex=colors[5]
+            )
 
-        link_palette_to_preset(result_id, preset_name)
+            link_palette_to_preset(result_id, preset_name)
+            self.statusBar().showMessage(
+                f"Palette saved to database. Result ID: {result_id}", 5000
+            )
 
-        self.statusBar().showMessage(
-            f"Palette saved to database. Result ID: {result_id}", 5000
-        )
+        except Exception as e:
+            logging.exception("Error while saving palette")
+            QMessageBox.critical(
+                self,
+                "Save Error",
+                f"An error occurred while saving the palette:\n{e}"
+            )
 
     except Exception as e:
         logging.exception("Error while saving palette")
