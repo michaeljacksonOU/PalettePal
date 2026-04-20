@@ -116,12 +116,17 @@ class Ui_interface(object):
         self.export_button.setToolTip("Export palette as a PNG")
         self.export_button.setFixedHeight(35)
 
+        self.save_button = QPushButton("Save Palette")
+        self.save_button.setToolTip("Save the current palette to the database")
+        self.save_button.setFixedHeight(35)
+
         button_row = QHBoxLayout()
         button_row.addWidget(self.pop_out_button)
         button_row.addStretch()
         button_row.addWidget(self.export_button)
         button_row.addStretch()
         button_row.addWidget(self.copy_button)
+        button_row.addWidget(self.save_button)
 
         for i, name in enumerate(frame_names):
             container = QVBoxLayout()
@@ -189,6 +194,7 @@ class Ui_interface(object):
         self.upload_image = QAction("Upload Image", MainWindow)
         self.action_export_palette = QAction("Export Palette", MainWindow)
         self.action_toggle_theme = QAction("Toggle Light/Dark Mode", MainWindow)
+        self.action_history = QAction("Palette History", MainWindow)
         self.faq = QAction("FAQ", MainWindow)
         
 
@@ -196,6 +202,7 @@ class Ui_interface(object):
         self.menufile.addAction(self.action_export_palette)
         self.menuSettings.addAction(self.action_toggle_theme)
         self.menuSettings.addAction(self.faq)
+        self.menuSettings.addAction(self.action_history)
 
         self.menubar.addMenu(self.menufile)
         self.menubar.addMenu(self.menuSettings)

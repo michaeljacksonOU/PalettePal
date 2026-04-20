@@ -4,6 +4,7 @@ import logging
 import colour
 from colour.models import sRGB_to_XYZ, XYZ_to_Oklab
 from widgets import ClickableLabel
+from palette_history import PaletteHistoryWindow
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout,
@@ -124,7 +125,6 @@ class ZoomableImageLabel(QWidget):
         if not self.image:
             return
 
-        # Right click resets the image
         if event.button() == Qt.RightButton:
             self._fit_to_window()
             self.update()
@@ -352,6 +352,7 @@ class MainWindow(QMainWindow):
 
         self.popout = None
         self.faq_window = None
+        self.history_window = None
 
         self.selected_hex = None
         self.selected_rgb = None
@@ -371,6 +372,7 @@ class MainWindow(QMainWindow):
 
         self.ui.upload_btn.clicked.connect(self.open_file_dialog)
         self.ui.copy_button.clicked.connect(self.copy_palette_colors)
+        self.ui.save_button.clicked.connect(self.save_palette)
         self.ui.pop_out_button.clicked.connect(self.toggle_popout)
         self.ui.Preset_combobox.currentIndexChanged.connect(self.update_palette_from_selected_color)
         self.ui.eyedropper_btn.clicked.connect(self.toggle_eyedropper)
@@ -380,6 +382,7 @@ class MainWindow(QMainWindow):
         self.ui.upload_image.triggered.connect(self.open_file_dialog)
         self.ui.faq.triggered.connect(self.open_faq_window)
         self.ui.clear_btn.clicked.connect(self.clear_board)
+        self.ui.action_history.triggered.connect(self.open_history_window)
 
         self.apply_theme()
 
@@ -516,6 +519,14 @@ class MainWindow(QMainWindow):
         self.faq_window.show()
         self.faq_window.raise_()
         self.faq_window.activateWindow()
+   
+    def open_history_window(self):
+        if self.history_window is None or not self.history_window.isVisible():
+            self.history_window = PaletteHistoryWindow(dark_mode=self.dark_mode)
+        self.history_window.apply_theme(self.dark_mode)
+        self.history_window.show()
+        self.history_window.raise_()
+        self.history_window.activateWindow()
 
     def toggle_eyedropper(self):
         self.eyedropper_enabled = not self.eyedropper_enabled
@@ -530,6 +541,8 @@ class MainWindow(QMainWindow):
     def toggle_theme(self):
         self.dark_mode = not self.dark_mode
         self.apply_theme()
+        if self.history_window and self.history_window.isVisible():
+            self.history_window.apply_theme(self.dark_mode)
 
     def apply_theme(self):
         if self.dark_mode:
@@ -666,19 +679,15 @@ class MainWindow(QMainWindow):
             new_v = max(new_v, min(1.0, v + 0.02))
             new_s = min(new_s, s)
 
-        # Protect light colors from turning muddy when darkened
-
         if role and "shadow" in role and s > 0.4:
             new_s = max(new_s, s + 0.05)
 
         if v > 0.75 and new_v < v:
             new_s = max(new_s, min(1.0, s + 0.08))
 
-        # Extra protection for already saturated colors so they do not dull out
         if s > 0.55 and new_v < v:
             new_s = max(new_s, s)
 
-        # Hard guards so the role behaves correctly
         if role and "highlight" in role:
             new_v = max(new_v, min(1.0, v + 0.02))
 
@@ -700,7 +709,6 @@ class MainWindow(QMainWindow):
                 "highlight2": {"dH": 0.00,  "dS": -0.10, "dV":  0.14},
                 "accent":     {"dH": 0.08,  "dS": 0.04,  "dV": 0.04}
             },
-
             "Warm": {
                 "lineart":    {"dH": 0.01,  "dS": -0.06, "dV": -0.34},
                 "shadow1":    {"dH": -0.02, "dS":  0.03, "dV": -0.20},
@@ -709,7 +717,6 @@ class MainWindow(QMainWindow):
                 "highlight2": {"dH": 0.01,  "dS": -0.08, "dV":  0.14},
                 "accent":     {"dH": 0.10,  "dS": 0.06,  "dV": 0.05}
             },
-
             "Cool": {
                 "lineart":    {"dH": -0.01, "dS": -0.06, "dV": -0.34},
                 "shadow1":    {"dH": 0.02,  "dS":  0.03, "dV": -0.20},
@@ -718,7 +725,6 @@ class MainWindow(QMainWindow):
                 "highlight2": {"dH": -0.01, "dS": -0.08, "dV":  0.14},
                 "accent":     {"dH": -0.10, "dS": 0.06,  "dV": 0.05}
             },
-
             "Moody": {
                 "lineart":    {"dH": 0.00,  "dS": -0.05, "dV": -0.42},
                 "shadow1":    {"dH": 0.01,  "dS":  0.03, "dV": -0.28},
@@ -727,7 +733,6 @@ class MainWindow(QMainWindow):
                 "highlight2": {"dH": 0.00,  "dS": -0.10, "dV":  0.10},
                 "accent":     {"dH": 0.18,  "dS": 0.02,  "dV": 0.00}
             },
-
             "Neon": {
                 "lineart":    {"dH": -0.03, "dS":  0.28, "dV": -0.32},
                 "shadow1":    {"dH": -0.04, "dS":  0.25, "dV": -0.10},
@@ -736,7 +741,6 @@ class MainWindow(QMainWindow):
                 "highlight2": {"dH": 0.00,  "dS": -0.04, "dV":  0.16},
                 "accent":     {"dH": 0.25,  "dS": 0.30,  "dV": 0.12}
             },
-
             "Pastel": {
                 "lineart":    {"dH": 0.00,  "dS": -0.12, "dV": -0.20},
                 "shadow1":    {"dH": -0.01, "dS": -0.04, "dV": -0.12},
@@ -745,14 +749,13 @@ class MainWindow(QMainWindow):
                 "highlight2": {"dH": 0.00,  "dS": -0.10, "dV":  0.16},
                 "accent":     {"dH": 0.10,  "dS": -0.02, "dV": 0.06}
             },
-
             "Anime Cel": {
                 "lineart":    {"dH": -0.01, "dS":  0.12, "dV": -0.42},
                 "shadow1":    {"dH": -0.02, "dS":  0.10, "dV": -0.22},
                 "shadow2":    {"dH": -0.04, "dS":  0.16, "dV": -0.36},
                 "highlight1": {"dH": 0.00,  "dS": -0.14, "dV":  0.26},
                 "highlight2": {"dH": 0.00,  "dS": -0.06, "dV":  0.14},
-                "accent":     {"dH": 0.15,  "dS": 0.14, "dV":  0.06}
+                "accent":     {"dH": 0.15,  "dS": 0.14,  "dV": 0.06}
             }
         }
 
@@ -769,7 +772,6 @@ class MainWindow(QMainWindow):
         accent_s = max(0.0, min(1.0, s + accent_rule.get("dS", 0.0)))
         accent_v = max(0.0, min(1.0, v + accent_rule.get("dV", 0.0)))
 
-        # Accent should not accidentally be darker than the base in bright presets
         if preset_name in {"Neon", "Pastel"}:
             accent_v = max(accent_v, min(1.0, v + 0.02))
 
@@ -836,6 +838,49 @@ class MainWindow(QMainWindow):
                 self,
                 "Copy Error",
                 f"An error occurred while copying palette colors:\n{e}"
+            )
+
+    def save_palette(self):
+        try:
+            if not self.generated_palette:
+                QMessageBox.information(self, "No Palette", "Generate a palette first.")
+                return
+
+            if not self.current_session_id:
+                QMessageBox.information(self, "No Session", "Upload an image first.")
+                return
+
+            if not self.selected_hex:
+                QMessageBox.information(self, "No Color Selected", "Select a color from the image first.")
+                return
+
+            preset_name = self.ui.Preset_combobox.currentText()
+            colors = self.generated_palette  # [lineart, accent, hl1, hl2, sh1, sh2]
+
+            result_id = save_palette_result(
+                session_id=self.current_session_id,
+                base_color_hex=self.selected_hex,
+                preset_environment=preset_name,
+                preset_style="Current UI Palette",
+                lineart_hex=colors[0],
+                accent_hex=colors[1],
+                highlight1_hex=colors[2],
+                highlight2_hex=colors[3],
+                shadow1_hex=colors[4],
+                shadow2_hex=colors[5]
+            )
+
+            link_palette_to_preset(result_id, preset_name)
+            self.statusBar().showMessage(
+                f"Palette saved to database. Result ID: {result_id}", 5000
+            )
+
+        except Exception as e:
+            logging.exception("Error while saving palette")
+            QMessageBox.critical(
+                self,
+                "Save Error",
+                f"An error occurred while saving the palette:\n{e}"
             )
 
     def clear_board(self):
