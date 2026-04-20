@@ -4,6 +4,7 @@ import logging
 import colour
 from colour.models import sRGB_to_XYZ, XYZ_to_Oklab
 from widgets import ClickableLabel
+from palette_history import PaletteHistoryWindow
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QLabel, QVBoxLayout,
@@ -351,6 +352,7 @@ class MainWindow(QMainWindow):
 
         self.popout = None
         self.faq_window = None
+        self.history_window = None
 
         self.selected_hex = None
         self.selected_rgb = None
@@ -380,6 +382,7 @@ class MainWindow(QMainWindow):
         self.ui.upload_image.triggered.connect(self.open_file_dialog)
         self.ui.faq.triggered.connect(self.open_faq_window)
         self.ui.clear_btn.clicked.connect(self.clear_board)
+        self.ui.action_history.triggered.connect(self.open_history_window)
 
         self.apply_theme()
 
@@ -516,6 +519,14 @@ class MainWindow(QMainWindow):
         self.faq_window.show()
         self.faq_window.raise_()
         self.faq_window.activateWindow()
+   
+    def open_history_window(self):
+        if self.history_window is None or not self.history_window.isVisible():
+            self.history_window = PaletteHistoryWindow(dark_mode=self.dark_mode)
+        self.history_window.apply_theme(self.dark_mode)
+        self.history_window.show()
+        self.history_window.raise_()
+        self.history_window.activateWindow()
 
     def toggle_eyedropper(self):
         self.eyedropper_enabled = not self.eyedropper_enabled
@@ -530,6 +541,8 @@ class MainWindow(QMainWindow):
     def toggle_theme(self):
         self.dark_mode = not self.dark_mode
         self.apply_theme()
+        if self.history_window and self.history_window.isVisible():
+            self.history_window.apply_theme(self.dark_mode)
 
     def apply_theme(self):
         if self.dark_mode:
