@@ -36,9 +36,9 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 
 
 class ZoomableImageLabel(QWidget):
-    ZOOM_STEP = 1.15
-    ZOOM_MIN = 0.05
-    ZOOM_MAX = 20.0
+    ZOOM_STEP = 1.15 # how much the zoom will increment
+    ZOOM_MIN = 0.05 # minmium zoom value
+    ZOOM_MAX = 20.0 # Max zoom value
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -49,7 +49,7 @@ class ZoomableImageLabel(QWidget):
         self._drag_start = None
         self._drag_orig = None
         self.setMouseTracking(True)
-
+    #function used to upload images 
     def set_image(self, path):
         try:
             self.image = QImage(path)
@@ -124,13 +124,13 @@ class ZoomableImageLabel(QWidget):
     def mousePressEvent(self, event):
         if not self.image:
             return
-
-        if event.button() == Qt.RightButton:
+        
+        if event.button() == Qt.RightButton: #reset the board if right click is pressed
             self._fit_to_window()
             self.update()
             return
 
-        if self.window().eyedropper_enabled:
+        if self.window().eyedropper_enabled: 
             try:
                 self._pick_color(event.position())
             except Exception as e:
@@ -141,45 +141,45 @@ class ZoomableImageLabel(QWidget):
                     f"An error occurred while selecting a color:\n{e}"
                 )
             return
-
+        #Function to handle left click drag events
         if event.button() == Qt.LeftButton:
             self._drag_start = event.position()
             self._drag_orig = QPointF(self._offset)
             self.setCursor(QCursor(Qt.ClosedHandCursor))
-
+    
     def mouseMoveEvent(self, event):
         if self._drag_start is not None:
             delta = event.position() - self._drag_start
             self._offset = self._drag_orig + delta
             self.update()
-
+    # handles dragging the mouse and updating the display with the new image position 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self._drag_start = None
             self._drag_orig = None
             self.setCursor(QCursor(Qt.ArrowCursor))
             self.update()
-
+    #pick color function - uses image coordinates to capture the pixel color
     def _pick_color(self, widget_pos):
         image_x = int((widget_pos.x() - self._offset.x()) / self._zoom)
         image_y = int((widget_pos.y() - self._offset.y()) / self._zoom)
 
         if not (0 <= image_x < self.image.width() and 0 <= image_y < self.image.height()):
             return
-
+        
         color = self.image.pixelColor(image_x, image_y)
-
+        #unpacks the RGB values from the selected color
         r = color.red()
         g = color.green()
         b = color.blue()
 
         srgb = [r / 255, g / 255, b / 255]
         hex_value = color.name().upper()
-
+        #converts RGB to OKLab color scheme
         xyz = sRGB_to_XYZ(srgb)
         oklab = XYZ_to_Oklab(xyz)
         L, a, b_val = oklab
-
+        #displays selected color on interface
         win = self.window()
         win.selected_hex = hex_value
         win.selected_rgb = (r, g, b)
@@ -267,7 +267,7 @@ class PalettePopout(QWidget):
                 self.boxes[i].setStyleSheet(f"background-color: {c}; border: 1px solid black;")
                 self.labels[i].setText(c)
 
-
+#FAQ window
 class FAQWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -341,7 +341,7 @@ class FAQWindow(QMainWindow):
         layout.addSpacing(10)
         layout.addWidget(scroll)
 
-
+#Main window
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -369,7 +369,7 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(self.ui.Image_frame)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.image_label)
-
+        #connecting functions to all buttons
         self.ui.upload_btn.clicked.connect(self.open_file_dialog)
         self.ui.copy_button.clicked.connect(self.copy_palette_colors)
         self.ui.save_button.clicked.connect(self.save_palette)
@@ -385,7 +385,7 @@ class MainWindow(QMainWindow):
         self.ui.action_history.triggered.connect(self.open_history_window)
 
         self.apply_theme()
-
+    
     def toggle_popout(self):
         if self.popout is None:
             self.popout = PalettePopout(self.dark_mode)
@@ -402,14 +402,14 @@ class MainWindow(QMainWindow):
                 self.popout.show()
                 self.popout.raise_()
                 self.popout.activateWindow()
-
+    #function that allows the file explorer to open up
     def open_file_dialog(self):
         try:
             file_path, _ = QFileDialog.getOpenFileName(
                 self,
                 "Select Image",
                 "",
-                "Images (*.png *.jpg *.jpeg)"
+                "Images (*.png *.jpg *.jpeg)" # restricts image types
             )
 
             if not file_path:
@@ -512,14 +512,14 @@ class MainWindow(QMainWindow):
                 "Export Error",
                 f"An error occurred during export:\n{e}"
             )
-
+    #displays FAQ windows
     def open_faq_window(self):
         if self.faq_window is None or not self.faq_window.isVisible():
             self.faq_window = FAQWindow()
         self.faq_window.show()
         self.faq_window.raise_()
         self.faq_window.activateWindow()
-   
+   #Opens Palette Window
     def open_history_window(self):
         if self.history_window is None or not self.history_window.isVisible():
             self.history_window = PaletteHistoryWindow(dark_mode=self.dark_mode)
@@ -527,7 +527,7 @@ class MainWindow(QMainWindow):
         self.history_window.show()
         self.history_window.raise_()
         self.history_window.activateWindow()
-
+    # function that turns eyedropper on and off
     def toggle_eyedropper(self):
         self.eyedropper_enabled = not self.eyedropper_enabled
 
@@ -882,7 +882,7 @@ class MainWindow(QMainWindow):
                 "Save Error",
                 f"An error occurred while saving the palette:\n{e}"
             )
-
+    #function used to clear the board out and reset everything to default
     def clear_board(self):
         self.image_label.image = None
         self.image_label.update()
@@ -927,7 +927,7 @@ if __name__ == "__main__":
     setup_logger()
     sys.excepthook = handle_exception
     initialize_database()
-
+    #creates the application and sets a default style sheet
     app = QApplication(sys.argv)
     app.setStyleSheet("""
     QToolTip {

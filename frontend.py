@@ -10,23 +10,25 @@ from widgets import ClickableLabel
 
 class Ui_interface(object):
     def setupUi(self, MainWindow):
+        #creates a main window to add all widgets inside
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(1500, 780)
         MainWindow.setWindowTitle("PalettePal")
 
         self.centralwidget = QWidget(MainWindow)
-
+        #sets up the layout of the interface
         self.main_layout = QHBoxLayout(self.centralwidget)
+        #Right and left side has a vertical layout
         self.left_layout = QVBoxLayout()
         self.right_layout = QVBoxLayout()
-
+        #adds the layout to the main window
         self.main_layout.addLayout(self.left_layout, 3)
         self.main_layout.addLayout(self.right_layout, 1)
-
+        #image frame
         self.Image_frame = QFrame()
         self.Image_frame.setFrameShape(QFrame.NoFrame)
         self.Image_frame.setMinimumHeight(500)
-
+        #layout for the buttons
         self.button_layout = QHBoxLayout()
 
         self.upload_btn = QPushButton("Upload Image")
@@ -37,13 +39,13 @@ class Ui_interface(object):
 
         self.eyedropper_btn = QPushButton("EyeDropper : On")
         self.eyedropper_btn.setToolTip("Use your cursor to select a color inside of an uploaded image")
-
+        #Adds buttons to the frame
         self.button_layout.addWidget(self.upload_btn)
         self.button_layout.addStretch()
         self.button_layout.addWidget(self.eyedropper_btn)
         self.button_layout.addStretch()
         self.button_layout.addWidget(self.clear_btn)
-
+        #selected color frame
         self.Selected_color_frame_2 = QFrame()
         self.Selected_color_frame_2.setFrameShape(QFrame.NoFrame)
 
@@ -69,7 +71,7 @@ class Ui_interface(object):
         self.left_layout.addWidget(self.Image_frame, 3)
         self.left_layout.addLayout(self.button_layout, 0)
         self.left_layout.addWidget(self.Selected_color_frame_2)
-
+        #preset frame
         self.Preset_frame = QFrame()
         self.Preset_frame.setFrameShape(QFrame.NoFrame)
 
@@ -84,7 +86,7 @@ class Ui_interface(object):
         ])
 
         self.Preset_layout.addWidget(self.Preset_combobox)
-
+        #palette Frame
         self.Palette_frame = QFrame()
         self.Palette_frame.setFrameShape(QFrame.NoFrame)
 
@@ -127,7 +129,7 @@ class Ui_interface(object):
         button_row.addStretch()
         button_row.addWidget(self.copy_button)
         button_row.addWidget(self.save_button)
-
+        #Created all the palette boxes using a loop
         for i, name in enumerate(frame_names):
             container = QVBoxLayout()
             container.setSpacing(10)
@@ -171,7 +173,7 @@ class Ui_interface(object):
         self.right_layout.addWidget(self.Palette_frame, 1)
 
         MainWindow.setCentralWidget(self.centralwidget)
-
+        #menu bar at the top of the interface
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setGeometry(QRect(0, 0, 1114, 26))
         self.menubar.setStyleSheet("QMenuBar { min-height: 40px; }")
@@ -197,7 +199,7 @@ class Ui_interface(object):
         self.action_history = QAction("Palette History", MainWindow)
         self.faq = QAction("FAQ", MainWindow)
         
-
+        #connections functions to the menu items
         self.menufile.addAction(self.upload_image)
         self.menufile.addAction(self.action_export_palette)
         self.menuSettings.addAction(self.action_toggle_theme)
